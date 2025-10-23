@@ -320,7 +320,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "email": current_user['email'],
         "full_name": current_user['full_name'],
         "role": current_user['role'],
-        "region_id": current_user['region_id'],
+        "region_id": current_user.get('region_id'),
         "active": current_user['active'],
         "created_at": str(current_user['created_at'])
     }
