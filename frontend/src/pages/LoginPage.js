@@ -9,10 +9,9 @@ import { Lock, User } from 'lucide-react';
 
 const LoginPage = ({ setUser }) => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [initializing, setInitializing] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
