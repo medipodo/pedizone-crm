@@ -508,7 +508,9 @@ async def get_visits(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/visits", response_model=Visit)
 async def create_visit(visit: VisitCreate, current_user: dict = Depends(get_current_user)):
-    visit_obj = Visit(**visit.model_dump(), salesperson_id=current_user["id"])
+    visit_data = visit.model_dump()
+    visit_data["salesperson_id"] = current_user["id"]  # Override with current user
+    visit_obj = Visit(**visit_data)
     await db.visits.insert_one(visit_obj.model_dump())
     return visit_obj
 
