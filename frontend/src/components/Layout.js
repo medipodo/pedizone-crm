@@ -71,7 +71,7 @@ const Layout = ({ children, user, setUser }) => {
         data-testid="sidebar"
       >
         {/* User Info */}
-        <div className="px-6 pb-4 border-b border-white/20">
+        <div className="px-6 pb-4 pt-8 border-b border-white/20">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white text-[#E50019] rounded-full flex items-center justify-center font-bold">
               {user.full_name.charAt(0)}
