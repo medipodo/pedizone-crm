@@ -22,6 +22,8 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(
     mongo_url,
     tlsAllowInvalidCertificates=True,
+    tlsInsecure=True,
+    ssl_cert_reqs=None,
     serverSelectionTimeoutMS=30000,
     connectTimeoutMS=30000,
     socketTimeoutMS=30000
