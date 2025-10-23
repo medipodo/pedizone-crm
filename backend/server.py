@@ -100,14 +100,18 @@ class VisitCreate(BaseModel):
     notes: Optional[str] = None
     location: Optional[Dict] = None
 
+class SaleItem(BaseModel):
+    product_id: str
+    product_name: str
+    quantity: float
+    unit_price: float
+    total: float
+
 class SaleCreate(BaseModel):
     customer_id: str
-    salesperson_id: str
-    product_id: str
-    quantity: int
-    unit_price: float
-    discount: float = 0
     sale_date: str
+    items: List[SaleItem]
+    total_amount: float
     notes: Optional[str] = None
 
 class CollectionCreate(BaseModel):
