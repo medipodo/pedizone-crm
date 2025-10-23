@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import { Button } from '@/components/ui/button';
-import 'leaflet/dist/leaflet.css';
 
 const VisitMap = ({ visits = [], sales = [], customers = [] }) => {
   const [mapReady, setMapReady] = useState(false);
