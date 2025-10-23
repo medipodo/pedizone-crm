@@ -128,7 +128,7 @@ const Layout = ({ children, user, setUser }) => {
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-[9998] lg:hidden"
+          className="fixed inset-0 bg-black/50 z-[10000] lg:hidden"
           onClick={() => setSidebarOpen(false)}
           data-testid="sidebar-overlay"
         ></div>
