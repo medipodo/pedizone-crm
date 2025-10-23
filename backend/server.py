@@ -559,15 +559,13 @@ async def create_sale(sale: SaleCreate, current_user: dict = Depends(get_current
         await conn.execute('''
             INSERT INTO sales (id, customer_id, salesperson_id, sale_date, items, total_amount, notes)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ''', sale_id, sale.customer_id, sale.salesperson_id, sale.product_id, sale.quantity, 
-        sale.unit_price, sale.discount, total_amount, sale.sale_date, sale.notes)
+        ''', sale_id, sale.customer_id, current_user['id'], sale.sale_date, 
+        json.dumps([item.dict() for item in sale.items]), sale.total_amount, sale.notes)
         
         new_sale = await conn.fetchrow('SELECT * FROM sales WHERE id = $1', sale_id)
         return dict(new_sale) | {
             "created_at": str(new_sale['created_at']),
             "sale_date": str(new_sale['sale_date']),
-            "unit_price": float(new_sale['unit_price']),
-            "discount": float(new_sale['discount']),
             "total_amount": float(new_sale['total_amount'])
         }
 
