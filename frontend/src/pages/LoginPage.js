@@ -30,23 +30,6 @@ const LoginPage = ({ setUser }) => {
     }
   };
 
-  const handleInitialize = async () => {
-    setInitializing(true);
-    try {
-      const response = await axiosInstance.post('/init');
-      toast.success(response.data.message);
-      if (response.data.admin_username) {
-        toast.info(`Admin: ${response.data.admin_username} / ${response.data.admin_password}`);
-        setUsername(response.data.admin_username);
-        setPassword(response.data.admin_password);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Başlatma başarısız');
-    } finally {
-      setInitializing(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-red-50 to-white p-4" data-testid="login-page">
       <div className="w-full max-w-md">
