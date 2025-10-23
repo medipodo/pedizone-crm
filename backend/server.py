@@ -206,12 +206,9 @@ async def init_database():
                 id VARCHAR PRIMARY KEY,
                 customer_id VARCHAR,
                 salesperson_id VARCHAR,
-                product_id VARCHAR,
-                quantity INTEGER,
-                unit_price DECIMAL(10,2),
-                discount DECIMAL(10,2),
-                total_amount DECIMAL(10,2),
                 sale_date TIMESTAMP,
+                items JSONB,
+                total_amount DECIMAL(10,2),
                 notes TEXT,
                 created_at TIMESTAMP DEFAULT NOW()
             )
