@@ -307,7 +307,7 @@ async def login(request: LoginRequest):
                 "email": user['email'],
                 "full_name": user['full_name'],
                 "role": user['role'],
-                "region_id": user['region_id']
+                "region_id": user.get('region_id')
             }
         }
 
