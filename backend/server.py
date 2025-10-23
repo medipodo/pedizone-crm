@@ -473,7 +473,13 @@ async def create_product(product: ProductCreate, current_user: dict = Depends(ge
         product.price_6_10, product.price_11_24, product.unit, product.category, product.description, product.photo_base64)
         
         new_product = await conn.fetchrow('SELECT * FROM products WHERE id = $1', product_id)
-        return dict(new_product) | {"created_at": str(new_product['created_at']), "price": float(new_product['price'])}
+        return dict(new_product) | {
+            "created_at": str(new_product['created_at']), 
+            "unit_price": float(new_product['unit_price']) if new_product['unit_price'] else 0,
+            "price_1_5": float(new_product['price_1_5']) if new_product['price_1_5'] else None,
+            "price_6_10": float(new_product['price_6_10']) if new_product['price_6_10'] else None,
+            "price_11_24": float(new_product['price_11_24']) if new_product['price_11_24'] else None
+        }
 
 # ============ VISITS ============
 
