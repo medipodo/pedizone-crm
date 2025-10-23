@@ -17,16 +17,15 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
-import ssl
+import ssl as ssl_module
 mongo_url = os.environ['MONGO_URL']
 # Create SSL context with relaxed settings for OpenSSL 3.0+ compatibility
-ssl_context = ssl.create_default_context()
+ssl_context = ssl_module.create_default_context()
 ssl_context.check_hostname = False
-ssl_context.verify_mode = ssl.CERT_NONE
+ssl_context.verify_mode = ssl_module.CERT_NONE
 client = AsyncIOMotorClient(
     mongo_url,
-    tlsCAFile=None,
-    ssl_cert_reqs=ssl.CERT_NONE,
+    tlsInsecure=True,
     serverSelectionTimeoutMS=10000,
     connectTimeoutMS=10000
 )
