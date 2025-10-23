@@ -108,22 +108,6 @@ const LoginPage = ({ setUser }) => {
               {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
             </Button>
           </form>
-
-          {/* Initialize Button */}
-          <div className="pt-4 border-t border-gray-100">
-            <Button
-              onClick={handleInitialize}
-              variant="outline"
-              className="w-full h-12 border-[#E50019] text-[#E50019] hover:bg-red-50 font-medium rounded-xl"
-              disabled={initializing}
-              data-testid="initialize-button"
-            >
-              {initializing ? 'Başlatılıyor...' : 'Sistemi Başlat'}
-            </Button>
-            <p className="text-xs text-gray-500 text-center mt-2">
-              İlk kurulum için sistemi başlatın
-            </p>
-          </div>
         </div>
 
         {/* Footer */}
