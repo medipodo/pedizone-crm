@@ -84,9 +84,14 @@ class CustomerCreate(BaseModel):
 class ProductCreate(BaseModel):
     name: str
     code: str
-    price: float
+    unit_price: float
+    price_1_5: Optional[float] = None
+    price_6_10: Optional[float] = None
+    price_11_24: Optional[float] = None
+    unit: Optional[str] = "adet"
     category: Optional[str] = None
     description: Optional[str] = None
+    photo_base64: Optional[str] = None
 
 class VisitCreate(BaseModel):
     customer_id: str
