@@ -182,7 +182,7 @@ const Dashboard = ({ user, setUser }) => {
               </div>
               <div className="text-center p-4 bg-white rounded-xl border border-gray-100">
                 <div className="text-3xl mb-2">🔥</div>
-                <p className="text-sm text-gray-600 font-medium">Ateşli</p>
+                <p className="text-sm text-gray-600 font-medium">Lider</p>
                 <p className="text-xs text-gray-500 mt-1">30,001-50,000₺</p>
               </div>
               <div className="text-center p-4 bg-white rounded-xl border border-gray-100">
