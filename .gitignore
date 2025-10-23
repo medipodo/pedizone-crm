@@ -26,7 +26,7 @@ next-env.d.ts
 *.tsbuildinfo
 
 # Production builds
-/build
+# NOTE: frontend/build is needed for Netlify, so it's not ignored
 dist/
 dist
 
