@@ -451,7 +451,13 @@ async def get_products(current_user: dict = Depends(get_current_user)):
     
     async with pool.acquire() as conn:
         products = await conn.fetch('SELECT * FROM products ORDER BY name')
-        return [dict(p) | {"created_at": str(p['created_at']), "price": float(p['price'])} for p in products]
+        return [dict(p) | {
+            "created_at": str(p['created_at']), 
+            "unit_price": float(p['unit_price']) if p['unit_price'] else 0,
+            "price_1_5": float(p['price_1_5']) if p['price_1_5'] else None,
+            "price_6_10": float(p['price_6_10']) if p['price_6_10'] else None,
+            "price_11_24": float(p['price_11_24']) if p['price_11_24'] else None
+        } for p in products]
 
 @api_router.post("/products")
 async def create_product(product: ProductCreate, current_user: dict = Depends(get_current_user)):
@@ -461,8 +467,8 @@ async def create_product(product: ProductCreate, current_user: dict = Depends(ge
     
     async with pool.acquire() as conn:
         await conn.execute('''
-            INSERT INTO products (id, name, code, price, category, description)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO products (id, name, code, unit_price, price_1_5, price_6_10, price_11_24, unit, category, description, photo_base64)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         ''', product_id, product.name, product.code, product.price, product.category, product.description)
         
         new_product = await conn.fetchrow('SELECT * FROM products WHERE id = $1', product_id)
