@@ -21,7 +21,6 @@ mongo_url = os.environ['MONGO_URL']
 # Motor configuration without SSL verification (for Atlas compatibility)
 client = AsyncIOMotorClient(
     mongo_url,
-    tlsAllowInvalidCertificates=True,
     tlsInsecure=True,
     serverSelectionTimeoutMS=30000,
     connectTimeoutMS=30000,
