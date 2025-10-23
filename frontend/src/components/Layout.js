@@ -71,7 +71,7 @@ const Layout = ({ children, user, setUser }) => {
         data-testid="sidebar"
       >
         {/* User Info */}
-        <div className="px-6 pb-4 pt-8 border-b border-white/20">
+        <div className="px-6 pb-4 pt-12 border-b border-white/20">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white text-[#E50019] rounded-full flex items-center justify-center font-bold">
               {user.full_name.charAt(0)}
@@ -86,7 +86,7 @@ const Layout = ({ children, user, setUser }) => {
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 overflow-y-auto px-6 py-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto px-6 py-6 space-y-1">
           {filteredMenu.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
