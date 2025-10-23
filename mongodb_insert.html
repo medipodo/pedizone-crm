@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MongoDB Admin Ekle</title>
+    <style>
+        body { font-family: Arial; padding: 40px; max-width: 600px; margin: 0 auto; }
+        button { padding: 15px 30px; font-size: 16px; background: #00ed64; border: none; cursor: pointer; border-radius: 5px; }
+        button:hover { background: #00d957; }
+        .result { margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🔐 PediZone CRM - Admin Oluştur</h1>
+    <p>Bu butona basarak MongoDB'ye otomatik admin kullanıcısı ekleyeceksiniz.</p>
+    
+    <button onclick="createAdmin()">Admin Kullanıcısı Oluştur</button>
+    
+    <div id="result" class="result" style="display:none;"></div>
+
+    <script>
+        async function createAdmin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = '⏳ Admin oluşturuluyor...';
+            
+            try {
+                // MongoDB Atlas Data API endpoint'i (kendinizinkini yazın)
+                const response = await fetch('https://pedizone-api.fly.dev/api/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        ✅ <strong>Admin Oluşturuldu!</strong><br><br>
+                        Username: <strong>admin</strong><br>
+                        Password: <strong>admin123</strong><br><br>
+                        <a href="https://pedizone-crm.netlify.app/login">Login Sayfasına Git →</a>
+                    `;
+                } else {
+                    throw new Error('Backend hatası');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    ❌ <strong>Hata!</strong><br><br>
+                    Backend henüz güncel değil. Manuel MongoDB ekleme gerekiyor:<br><br>
+                    1. https://cloud.mongodb.com/ → Giriş yapın<br>
+                    2. Clusters → Browse Collections<br>
+                    3. Database: pedizone_crm → Collection: users<br>
+                    4. INSERT DOCUMENT butonuna basın<br>
+                    5. Aşağıdaki JSON'u yapıştırın (tıklayarak kopyalayın):
+                    <pre style="background:#fff; padding:10px; cursor:pointer;" onclick="navigator.clipboard.writeText(this.innerText)">
+{
+  "id": "admin-001",
+  "username": "admin",
+  "email": "admin@pedizone.com",
+  "full_name": "PediZone Admin",
+  "role": "admin",
+  "region_id": null,
+  "password_hash": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5aeJEcPazpqLu",
+  "active": true,
+  "created_at": "2025-10-23T12:00:00.000Z"
+}</pre>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
