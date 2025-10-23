@@ -1,7 +1,6 @@
 [build]
-  base = "frontend"
-  command = "yarn install && yarn build"
-  publish = "build"
+  command = "cd frontend && yarn install && yarn build"
+  publish = "frontend/build"
 
 [build.environment]
   REACT_APP_BACKEND_URL = "https://pedizone-api.fly.dev"
