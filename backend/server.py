@@ -141,18 +141,17 @@ class Visit(BaseModel):
     salesperson_id: str
     visit_date: str
     notes: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    location: Optional[Dict[str, float]] = None  # {latitude: float, longitude: float}
     photo_base64: Optional[str] = None
     status: str = "gorusuldu"  # gorusuldu, anlasildi, randevu_alindi
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class VisitCreate(BaseModel):
     customer_id: str
+    salesperson_id: str
     visit_date: str
     notes: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    location: Optional[Dict[str, float]] = None
     photo_base64: Optional[str] = None
     status: str = "gorusuldu"
 
