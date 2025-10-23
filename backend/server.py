@@ -18,10 +18,11 @@ load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
-# Motor configuration without SSL verification (for Atlas compatibility)
+# Motor configuration for Atlas compatibility with proper TLS
 client = AsyncIOMotorClient(
     mongo_url,
-    tlsInsecure=True,
+    tls=True,
+    tlsAllowInvalidCertificates=True,
     serverSelectionTimeoutMS=30000,
     connectTimeoutMS=30000,
     socketTimeoutMS=30000
