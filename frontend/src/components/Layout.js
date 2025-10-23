@@ -70,18 +70,6 @@ const Layout = ({ children, user, setUser }) => {
         }`}
         data-testid="sidebar"
       >
-        {/* Logo */}
-        <div className="p-4 pb-4">
-          <div className="flex flex-col items-center justify-center gap-1">
-            <img 
-              src="https://customer-assets.emergentagent.com/job_f2a1a2de-506c-4346-999f-22d1252f1d2d/artifacts/oi6kp97t_PediZone.png" 
-              alt="PediZone" 
-              className="h-24"
-            />
-            <h1 className="text-base font-bold text-white text-center leading-tight">PediZone İş Takip Sistemi</h1>
-          </div>
-        </div>
-
         {/* User Info */}
         <div className="px-6 pb-4 border-b border-white/20">
           <div className="flex items-center gap-3">
