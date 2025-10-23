@@ -175,9 +175,14 @@ async def init_database():
                 id VARCHAR PRIMARY KEY,
                 name VARCHAR NOT NULL,
                 code VARCHAR UNIQUE NOT NULL,
-                price DECIMAL(10,2),
+                unit_price DECIMAL(10,2),
+                price_1_5 DECIMAL(10,2),
+                price_6_10 DECIMAL(10,2),
+                price_11_24 DECIMAL(10,2),
+                unit VARCHAR DEFAULT 'adet',
                 category VARCHAR,
                 description TEXT,
+                photo_base64 TEXT,
                 created_at TIMESTAMP DEFAULT NOW()
             )
         ''')
