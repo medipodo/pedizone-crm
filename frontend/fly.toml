@@ -1,22 +1,22 @@
-app = "pedizone-web"
-primary_region = "ams"
+# fly.toml app configuration file generated for pedizone-web on 2025-10-23T09:10:18Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'pedizone-web'
+primary_region = 'ams'
 
 [build]
-  [build.args]
-    REACT_APP_BACKEND_URL = "https://pedizone-api.fly.dev"
-
-[env]
-  PORT = "8080"
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
 [[vm]]
-  memory = "256mb"
-  cpu_kind = "shared"
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
