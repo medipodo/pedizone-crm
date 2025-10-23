@@ -469,7 +469,8 @@ async def create_product(product: ProductCreate, current_user: dict = Depends(ge
         await conn.execute('''
             INSERT INTO products (id, name, code, unit_price, price_1_5, price_6_10, price_11_24, unit, category, description, photo_base64)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        ''', product_id, product.name, product.code, product.price, product.category, product.description)
+        ''', product_id, product.name, product.code, product.unit_price, product.price_1_5, 
+        product.price_6_10, product.price_11_24, product.unit, product.category, product.description, product.photo_base64)
         
         new_product = await conn.fetchrow('SELECT * FROM products WHERE id = $1', product_id)
         return dict(new_product) | {"created_at": str(new_product['created_at']), "price": float(new_product['price'])}
