@@ -546,8 +546,6 @@ async def get_sales(
         return [dict(s) | {
             "created_at": str(s['created_at']),
             "sale_date": str(s['sale_date']),
-            "unit_price": float(s['unit_price']),
-            "discount": float(s['discount']),
             "total_amount": float(s['total_amount'])
         } for s in sales]
 
@@ -556,12 +554,11 @@ async def create_sale(sale: SaleCreate, current_user: dict = Depends(get_current
     """Create new sale"""
     pool = await get_db_pool()
     sale_id = f"sale-{datetime.now().timestamp()}"
-    total_amount = (sale.quantity * sale.unit_price) - sale.discount
     
     async with pool.acquire() as conn:
         await conn.execute('''
-            INSERT INTO sales (id, customer_id, salesperson_id, product_id, quantity, unit_price, discount, total_amount, sale_date, notes)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            INSERT INTO sales (id, customer_id, salesperson_id, sale_date, items, total_amount, notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
         ''', sale_id, sale.customer_id, sale.salesperson_id, sale.product_id, sale.quantity, 
         sale.unit_price, sale.discount, total_amount, sale.sale_date, sale.notes)
         
