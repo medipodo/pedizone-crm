@@ -72,9 +72,14 @@ const VisitsPage = ({ user, setUser }) => {
     e.preventDefault();
     try {
       const data = {
-        ...formData,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null
+        customer_id: formData.customer_id,
+        salesperson_id: user.id,
+        visit_date: new Date(formData.visit_date).toISOString(),
+        notes: formData.notes || '',
+        location: (formData.latitude && formData.longitude) ? {
+          latitude: parseFloat(formData.latitude),
+          longitude: parseFloat(formData.longitude)
+        } : null
       };
       await axiosInstance.post('/visits', data);
       toast.success('Ziyaret kaydedildi');
@@ -82,7 +87,8 @@ const VisitsPage = ({ user, setUser }) => {
       resetForm();
       fetchVisits();
     } catch (error) {
-      toast.error('İşlem başarısız');
+      console.error('Ziyaret ekleme hatası:', error);
+      toast.error(error.response?.data?.detail || 'İşlem başarısız');
     }
   };
 
