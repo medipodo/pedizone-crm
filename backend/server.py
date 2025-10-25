@@ -485,8 +485,7 @@ async def create_product(product: ProductCreate, current_user: dict = Depends(ge
 @api_router.get("/visits")
 async def get_visits(
     salesperson_id: Optional[str] = Query(None),
-    customer_id: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    customer_id: Optional[str] = Query(None)
 ):
     """Get all visits"""
     pool = await get_db_pool()
