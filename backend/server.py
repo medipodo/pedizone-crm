@@ -385,7 +385,7 @@ async def create_user(user: UserCreate, current_user: dict = Depends(get_current
 # ============ REGIONS ============
 
 @api_router.get("/regions")
-async def get_regions(current_user: dict = Depends(get_current_user)):
+async def get_regions():
     """Get all regions"""
     pool = await get_db_pool()
     
