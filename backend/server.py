@@ -284,6 +284,36 @@ async def initialize_system():
             "admin_password": "admin123"
         }
 
+@api_router.post("/migrate")
+async def migrate_database():
+    """Drop and recreate all tables - USE WITH CAUTION!"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        # Drop all tables
+        await conn.execute('DROP TABLE IF EXISTS collections CASCADE')
+        await conn.execute('DROP TABLE IF EXISTS sales CASCADE')
+        await conn.execute('DROP TABLE IF EXISTS visits CASCADE')
+        await conn.execute('DROP TABLE IF EXISTS products CASCADE')
+        await conn.execute('DROP TABLE IF EXISTS documents CASCADE')
+        await conn.execute('DROP TABLE IF EXISTS customers CASCADE')
+        await conn.execute('DROP TABLE IF EXISTS regions CASCADE')
+        await conn.execute('DROP TABLE IF EXISTS users CASCADE')
+        
+        # Recreate with init_database
+        await init_database()
+        
+        # Create admin
+        admin_id = f"admin-{datetime.now().timestamp()}"
+        password_hash = pwd_context.hash('admin123')
+        
+        await conn.execute('''
+            INSERT INTO users (id, username, email, full_name, role, password_hash, active)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ''', admin_id, 'admin', 'admin@pedizone.com', 'PediZone Admin', 'admin', password_hash, True)
+        
+        return {"message": "Database migrated successfully", "admin_created": True}
+
 @api_router.post("/auth/login")
 async def login(request: LoginRequest):
     """Login endpoint"""
