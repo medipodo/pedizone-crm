@@ -527,8 +527,7 @@ async def create_visit(visit: VisitCreate, current_user: dict = Depends(get_curr
 @api_router.get("/sales")
 async def get_sales(
     salesperson_id: Optional[str] = Query(None),
-    customer_id: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    customer_id: Optional[str] = Query(None)
 ):
     """Get all sales"""
     pool = await get_db_pool()
