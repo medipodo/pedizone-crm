@@ -358,7 +358,7 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
 # ============ USERS ============
 
 @api_router.get("/users", response_model=List[UserResponse])
-async def get_users(current_user: dict = Depends(get_current_user)):
+async def get_users():
     """Get all users"""
     pool = await get_db_pool()
     
