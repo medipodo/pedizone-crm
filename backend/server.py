@@ -445,7 +445,7 @@ async def create_customer(customer: CustomerCreate, current_user: dict = Depends
 # ============ PRODUCTS ============
 
 @api_router.get("/products")
-async def get_products(current_user: dict = Depends(get_current_user)):
+async def get_products():
     """Get all products"""
     pool = await get_db_pool()
     
