@@ -412,8 +412,7 @@ async def create_region(region: RegionCreate, current_user: dict = Depends(get_c
 
 @api_router.get("/customers")
 async def get_customers(
-    region_id: Optional[str] = Query(None),
-    current_user: dict = Depends(get_current_user)
+    region_id: Optional[str] = Query(None)
 ):
     """Get all customers"""
     pool = await get_db_pool()
