@@ -65,7 +65,7 @@ const Layout = ({ children, user, setUser }) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-[#E50019] text-white z-[50] lg:z-[10001] transform transition-transform duration-300 lg:translate-x-0 flex flex-col ${
+        className={`fixed top-0 left-0 h-full w-64 bg-[#E50019] text-white z-[99999] transform transition-transform duration-300 lg:translate-x-0 flex flex-col ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         data-testid="sidebar"
