@@ -1,54 +1,53 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
-import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
-import uuid
-from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 import jwt
+from datetime import datetime, timedelta, timezone
+import asyncpg
+import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-# Motor configuration for local MongoDB
-client = AsyncIOMotorClient(
-    mongo_url,
-    serverSelectionTimeoutMS=30000,
-    connectTimeoutMS=30000,
-    socketTimeoutMS=30000
-)
-db = client[os.environ['DB_NAME']]
+# PostgreSQL connection
+DATABASE_URL = os.environ.get('DATABASE_URL')
+pool = None
+
+async def get_db_pool():
+    global pool
+    if pool is None:
+        pool = await asyncpg.create_pool(DATABASE_URL, min_size=1, max_size=10)
+    return pool
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
-SECRET_KEY = os.environ.get('JWT_SECRET', 'pedizone-secret-key-2025')
-ALGORITHM = "HS256"
+SECRET_KEY = os.environ.get('SECRET_KEY', 'pedizone-secret-key-2025')
 
-app = FastAPI()
+app = FastAPI(title="PediZone CRM API")
 api_router = APIRouter(prefix="/api")
+
+# CORS
+origins = os.environ.get('CORS_ORIGINS', '*').split(',')
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ============ MODELS ============
 
-class User(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+class LoginRequest(BaseModel):
     username: str
-    email: str
-    full_name: str
-    role: str  # admin, regional_manager, salesperson
-    region_id: Optional[str] = None
-    password_hash: str
-    active: bool = True
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    password: str
 
 class UserCreate(BaseModel):
     username: str
@@ -68,34 +67,10 @@ class UserResponse(BaseModel):
     active: bool
     created_at: str
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
-class Region(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    description: Optional[str] = None
-    manager_id: Optional[str] = None
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
 class RegionCreate(BaseModel):
     name: str
     description: Optional[str] = None
     manager_id: Optional[str] = None
-
-class Customer(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    address: str
-    phone: str
-    email: Optional[str] = None
-    region_id: str
-    tax_number: Optional[str] = None
-    notes: Optional[str] = None
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class CustomerCreate(BaseModel):
     name: str
@@ -106,53 +81,24 @@ class CustomerCreate(BaseModel):
     tax_number: Optional[str] = None
     notes: Optional[str] = None
 
-class Product(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    code: str
-    name: str
-    description: Optional[str] = None
-    unit_price: float
-    price_1_5: Optional[float] = None  # 1-5 adet fiyatı
-    price_6_10: Optional[float] = None  # 6-10 adet fiyatı
-    price_11_24: Optional[float] = None  # 11-24 adet fiyatı
-    unit: str = "adet"
-    photo_base64: Optional[str] = None
-    active: bool = True
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
 class ProductCreate(BaseModel):
-    code: str
     name: str
-    description: Optional[str] = None
+    code: str
     unit_price: float
     price_1_5: Optional[float] = None
     price_6_10: Optional[float] = None
     price_11_24: Optional[float] = None
-    unit: str = "adet"
+    unit: Optional[str] = "adet"
+    category: Optional[str] = None
+    description: Optional[str] = None
     photo_base64: Optional[str] = None
-    active: bool = True
-
-class Visit(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    customer_id: str
-    salesperson_id: str
-    visit_date: str
-    notes: Optional[str] = None
-    location: Optional[Dict[str, float]] = None  # {latitude: float, longitude: float}
-    photo_base64: Optional[str] = None
-    status: str = "gorusuldu"  # gorusuldu, anlasildi, randevu_alindi
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class VisitCreate(BaseModel):
     customer_id: str
     salesperson_id: str
     visit_date: str
     notes: Optional[str] = None
-    location: Optional[Dict[str, float]] = None
-    photo_base64: Optional[str] = None
-    status: str = "gorusuldu"
+    location: Optional[Dict] = None
 
 class SaleItem(BaseModel):
     product_id: str
@@ -161,17 +107,6 @@ class SaleItem(BaseModel):
     unit_price: float
     total: float
 
-class Sale(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    customer_id: str
-    salesperson_id: str
-    sale_date: str
-    items: List[SaleItem]
-    total_amount: float
-    notes: Optional[str] = None
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
 class SaleCreate(BaseModel):
     customer_id: str
     sale_date: str
@@ -179,537 +114,537 @@ class SaleCreate(BaseModel):
     total_amount: float
     notes: Optional[str] = None
 
-class Collection(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    customer_id: str
-    salesperson_id: str
-    amount: float
-    collection_date: str
-    payment_method: str  # nakit, kredi_karti, banka_transferi
-    notes: Optional[str] = None
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-
 class CollectionCreate(BaseModel):
-    customer_id: str
+    sale_id: str
     amount: float
     collection_date: str
     payment_method: str
     notes: Optional[str] = None
 
-class Document(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    title: str
-    description: Optional[str] = None
-    url: str
-    type: str  # katalog, brosur, fiyat_listesi
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+# ============ DATABASE INIT ============
 
-class DocumentCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-    url: str
-    type: str
+async def init_database():
+    """Initialize all database tables"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        # Users table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id VARCHAR PRIMARY KEY,
+                username VARCHAR UNIQUE NOT NULL,
+                email VARCHAR UNIQUE NOT NULL,
+                full_name VARCHAR,
+                role VARCHAR,
+                region_id VARCHAR,
+                password_hash VARCHAR NOT NULL,
+                active BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
+        
+        # Regions table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS regions (
+                id VARCHAR PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                description TEXT,
+                manager_id VARCHAR,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
+        
+        # Customers table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS customers (
+                id VARCHAR PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                address TEXT,
+                phone VARCHAR,
+                email VARCHAR,
+                region_id VARCHAR,
+                tax_number VARCHAR,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
+        
+        # Products table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS products (
+                id VARCHAR PRIMARY KEY,
+                name VARCHAR NOT NULL,
+                code VARCHAR UNIQUE NOT NULL,
+                unit_price DECIMAL(10,2),
+                price_1_5 DECIMAL(10,2),
+                price_6_10 DECIMAL(10,2),
+                price_11_24 DECIMAL(10,2),
+                unit VARCHAR DEFAULT 'adet',
+                category VARCHAR,
+                description TEXT,
+                photo_base64 TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
+        
+        # Visits table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS visits (
+                id VARCHAR PRIMARY KEY,
+                customer_id VARCHAR,
+                salesperson_id VARCHAR,
+                visit_date TIMESTAMP,
+                notes TEXT,
+                location JSONB,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
+        
+        # Sales table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS sales (
+                id VARCHAR PRIMARY KEY,
+                customer_id VARCHAR,
+                salesperson_id VARCHAR,
+                sale_date TIMESTAMP,
+                items JSONB,
+                total_amount DECIMAL(10,2),
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
+        
+        # Collections table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS collections (
+                id VARCHAR PRIMARY KEY,
+                sale_id VARCHAR,
+                amount DECIMAL(10,2),
+                collection_date TIMESTAMP,
+                payment_method VARCHAR,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
 
-# ============ AUTH HELPERS ============
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(days=7)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+# ============ AUTH ============
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get current user from token"""
     try:
-        token = credentials.credentials
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        user = await db.users.find_one({"id": user_id}, {"_id": 0})
-        if user is None:
-            raise HTTPException(status_code=401, detail="User not found")
-        return user
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=["HS256"])
+        username = payload.get("sub")
+        
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            user = await conn.fetchrow('SELECT * FROM users WHERE username = $1', username)
+            
+            if not user:
+                raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+            
+            return dict(user)
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
+        raise HTTPException(status_code=401, detail="Token süresi doldu")
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Geçersiz token")
 
-# ============ AUTH ROUTES ============
+# ============ ROUTES ============
+
+@api_router.get("/")
+async def root():
+    return {"message": "PediZone CRM API - PostgreSQL", "version": "2.0"}
+
+@api_router.get("/status")
+async def status():
+    return {"status": "ok", "database": "postgresql"}
+
+@api_router.post("/init")
+async def initialize_system():
+    """Initialize system with tables and admin user"""
+    await init_database()
+    
+    pool = await get_db_pool()
+    async with pool.acquire() as conn:
+        admin = await conn.fetchrow('SELECT * FROM users WHERE username = $1', 'admin')
+        
+        if admin:
+            return {"message": "Sistem zaten başlatılmış"}
+        
+        admin_id = f"admin-{datetime.now().timestamp()}"
+        password_hash = pwd_context.hash('admin123')
+        
+        await conn.execute('''
+            INSERT INTO users (id, username, email, full_name, role, password_hash, active)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ''', admin_id, 'admin', 'admin@pedizone.com', 'PediZone Admin', 'admin', password_hash, True)
+        
+        return {
+            "message": "Sistem başlatıldı",
+            "admin_username": "admin",
+            "admin_password": "admin123"
+        }
 
 @api_router.post("/auth/login")
 async def login(request: LoginRequest):
-    user = await db.users.find_one({"username": request.username}, {"_id": 0})
-    if not user or not verify_password(request.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Kullanıcı adı veya şifre hatalı")
+    """Login endpoint"""
+    pool = await get_db_pool()
     
-    if not user.get("active", True):
-        raise HTTPException(status_code=401, detail="Hesap devre dışı")
-    
-    access_token = create_access_token({"sub": user["id"], "role": user["role"]})
-    user_response = UserResponse(**user)
-    return {"access_token": access_token, "token_type": "bearer", "user": user_response}
+    async with pool.acquire() as conn:
+        user = await conn.fetchrow('SELECT * FROM users WHERE username = $1', request.username)
+        
+        if not user or not pwd_context.verify(request.password, user['password_hash']):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Kullanıcı adı veya şifre hatalı"
+            )
+        
+        if not user['active']:
+            raise HTTPException(status_code=403, detail="Kullanıcı aktif değil")
+        
+        token_data = {
+            "sub": user['username'],
+            "user_id": user['id'],
+            "role": user['role'],
+            "exp": datetime.utcnow() + timedelta(days=7)
+        }
+        token = jwt.encode(token_data, SECRET_KEY, algorithm="HS256")
+        
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+            "user": {
+                "id": user['id'],
+                "username": user['username'],
+                "email": user['email'],
+                "full_name": user['full_name'],
+                "role": user['role'],
+                "region_id": user.get('region_id')
+            }
+        }
 
 @api_router.get("/auth/me", response_model=UserResponse)
 async def get_me(current_user: dict = Depends(get_current_user)):
-    return UserResponse(**current_user)
+    """Get current user info"""
+    return {
+        "id": current_user['id'],
+        "username": current_user['username'],
+        "email": current_user['email'],
+        "full_name": current_user['full_name'],
+        "role": current_user['role'],
+        "region_id": current_user.get('region_id'),
+        "active": current_user['active'],
+        "created_at": str(current_user['created_at'])
+    }
 
 # ============ DASHBOARD ============
 
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
-    role = current_user["role"]
-    user_id = current_user["id"]
+    """Get dashboard statistics"""
+    pool = await get_db_pool()
     
-    # Tarih filtreleri
-    now = datetime.now(timezone.utc)
-    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
-    
-    if role == "admin":
-        # Tüm sistem istatistikleri
-        total_sales_docs = await db.sales.find({}).to_list(10000)
-        total_visits = await db.visits.count_documents({})
-        total_collections_docs = await db.collections.find({}).to_list(10000)
-        total_customers = await db.customers.count_documents({})
-        
-        total_sales_amount = sum([s["total_amount"] for s in total_sales_docs])
-        total_collections_amount = sum([c["amount"] for c in total_collections_docs])
-        
-        # Bu ay
-        monthly_sales = [s for s in total_sales_docs if s["created_at"] >= start_of_month]
-        monthly_amount = sum([s["total_amount"] for s in monthly_sales])
+    async with pool.acquire() as conn:
+        total_customers = await conn.fetchval('SELECT COUNT(*) FROM customers')
+        total_sales = await conn.fetchval('SELECT COUNT(*) FROM sales')
+        total_revenue = await conn.fetchval('SELECT COALESCE(SUM(total_amount), 0) FROM sales')
         
         return {
-            "total_sales": len(total_sales_docs),
-            "total_sales_amount": total_sales_amount,
-            "total_visits": total_visits,
-            "total_collections": total_collections_amount,
-            "total_customers": total_customers,
-            "monthly_sales_amount": monthly_amount
-        }
-    
-    elif role == "regional_manager":
-        # Bölge sorumlusu - kendi bölgesindeki ekibin istatistikleri
-        region_id = current_user.get("region_id")
-        if not region_id:
-            return {"error": "Bölge ataması yok"}
-        
-        # Bölgedeki plasiyer ID'lerini al
-        team_users = await db.users.find({"region_id": region_id, "role": "salesperson"}, {"_id": 0}).to_list(100)
-        team_ids = [u["id"] for u in team_users]
-        
-        team_sales = await db.sales.find({"salesperson_id": {"$in": team_ids}}).to_list(10000)
-        team_visits = await db.visits.count_documents({"salesperson_id": {"$in": team_ids}})
-        team_collections_docs = await db.collections.find({"salesperson_id": {"$in": team_ids}}).to_list(10000)
-        
-        total_sales_amount = sum([s["total_amount"] for s in team_sales])
-        total_collections_amount = sum([c["amount"] for c in team_collections_docs])
-        
-        monthly_sales = [s for s in team_sales if s["created_at"] >= start_of_month]
-        monthly_amount = sum([s["total_amount"] for s in monthly_sales])
-        
-        return {
-            "total_sales": len(team_sales),
-            "total_sales_amount": total_sales_amount,
-            "total_visits": team_visits,
-            "total_collections": total_collections_amount,
-            "team_size": len(team_users),
-            "monthly_sales_amount": monthly_amount
-        }
-    
-    else:  # salesperson
-        # Plasiyer - kendi istatistikleri
-        my_sales = await db.sales.find({"salesperson_id": user_id}).to_list(10000)
-        my_visits = await db.visits.count_documents({"salesperson_id": user_id})
-        my_collections_docs = await db.collections.find({"salesperson_id": user_id}).to_list(10000)
-        
-        total_sales_amount = sum([s["total_amount"] for s in my_sales])
-        total_collections_amount = sum([c["amount"] for c in my_collections_docs])
-        
-        monthly_sales = [s for s in my_sales if s["created_at"] >= start_of_month]
-        monthly_amount = sum([s["total_amount"] for s in monthly_sales])
-        
-        # Prim emoji hesaplama
-        emoji = "🌱"
-        if monthly_amount > 50000:
-            emoji = "🏆"
-        elif monthly_amount > 30000:
-            emoji = "🔥"
-        elif monthly_amount > 10000:
-            emoji = "💪"
-        
-        return {
-            "total_sales": len(my_sales),
-            "total_sales_amount": total_sales_amount,
-            "total_visits": my_visits,
-            "total_collections": total_collections_amount,
-            "monthly_sales_amount": monthly_amount,
-            "commission_emoji": emoji
+            "total_customers": total_customers or 0,
+            "total_sales": total_sales or 0,
+            "total_revenue": float(total_revenue or 0),
+            "active_users": 1
         }
 
 # ============ USERS ============
 
 @api_router.get("/users", response_model=List[UserResponse])
 async def get_users(current_user: dict = Depends(get_current_user)):
-    if current_user["role"] not in ["admin", "regional_manager"]:
-        raise HTTPException(status_code=403, detail="Yetkisiz erişim")
+    """Get all users"""
+    pool = await get_db_pool()
     
-    query = {}
-    if current_user["role"] == "regional_manager":
-        query = {"region_id": current_user.get("region_id")}
-    
-    users = await db.users.find(query, {"_id": 0, "password_hash": 0}).to_list(1000)
-    return [UserResponse(**u) for u in users]
+    async with pool.acquire() as conn:
+        users = await conn.fetch('SELECT * FROM users ORDER BY created_at DESC')
+        return [dict(u) | {"created_at": str(u['created_at'])} for u in users]
 
 @api_router.post("/users", response_model=UserResponse)
-async def create_user(user_create: UserCreate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Sadece admin kullanıcı ekleyebilir")
+async def create_user(user: UserCreate, current_user: dict = Depends(get_current_user)):
+    """Create new user"""
+    pool = await get_db_pool()
+    user_id = f"user-{datetime.now().timestamp()}"
+    password_hash = pwd_context.hash(user.password)
     
-    existing = await db.users.find_one({"username": user_create.username})
-    if existing:
-        raise HTTPException(status_code=400, detail="Kullanıcı adı zaten mevcut")
-    
-    user_dict = user_create.model_dump()
-    password = user_dict.pop("password")
-    user_obj = User(**user_dict, password_hash=get_password_hash(password))
-    
-    await db.users.insert_one(user_obj.model_dump())
-    return UserResponse(**user_obj.model_dump())
-
-@api_router.put("/users/{user_id}", response_model=UserResponse)
-async def update_user(user_id: str, user_update: dict, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Yetkisiz erişim")
-    
-    if "password" in user_update:
-        user_update["password_hash"] = get_password_hash(user_update.pop("password"))
-    
-    await db.users.update_one({"id": user_id}, {"$set": user_update})
-    updated = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
-    return UserResponse(**updated)
-
-@api_router.delete("/users/{user_id}")
-async def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Yetkisiz erişim")
-    await db.users.delete_one({"id": user_id})
-    return {"message": "Kullanıcı silindi"}
+    async with pool.acquire() as conn:
+        await conn.execute('''
+            INSERT INTO users (id, username, email, full_name, role, region_id, password_hash, active)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ''', user_id, user.username, user.email, user.full_name, user.role, user.region_id, password_hash, True)
+        
+        new_user = await conn.fetchrow('SELECT * FROM users WHERE id = $1', user_id)
+        return dict(new_user) | {"created_at": str(new_user['created_at'])}
 
 # ============ REGIONS ============
 
-@api_router.get("/regions", response_model=List[Region])
+@api_router.get("/regions")
 async def get_regions(current_user: dict = Depends(get_current_user)):
-    regions = await db.regions.find({}, {"_id": 0}).to_list(1000)
-    return regions
+    """Get all regions"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        regions = await conn.fetch('SELECT * FROM regions ORDER BY name')
+        return [dict(r) | {"created_at": str(r['created_at'])} for r in regions]
 
-@api_router.post("/regions", response_model=Region)
+@api_router.post("/regions")
 async def create_region(region: RegionCreate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Sadece admin bölge ekleyebilir")
-    region_obj = Region(**region.model_dump())
-    await db.regions.insert_one(region_obj.model_dump())
-    return region_obj
-
-@api_router.put("/regions/{region_id}", response_model=Region)
-async def update_region(region_id: str, region_update: dict, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Yetkisiz erişim")
-    await db.regions.update_one({"id": region_id}, {"$set": region_update})
-    updated = await db.regions.find_one({"id": region_id}, {"_id": 0})
-    return Region(**updated)
-
-@api_router.delete("/regions/{region_id}")
-async def delete_region(region_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Yetkisiz erişim")
-    await db.regions.delete_one({"id": region_id})
-    return {"message": "Bölge silindi"}
+    """Create new region"""
+    pool = await get_db_pool()
+    region_id = f"region-{datetime.now().timestamp()}"
+    
+    async with pool.acquire() as conn:
+        await conn.execute('''
+            INSERT INTO regions (id, name, description, manager_id)
+            VALUES ($1, $2, $3, $4)
+        ''', region_id, region.name, region.description, region.manager_id)
+        
+        new_region = await conn.fetchrow('SELECT * FROM regions WHERE id = $1', region_id)
+        return dict(new_region) | {"created_at": str(new_region['created_at'])}
 
 # ============ CUSTOMERS ============
 
-@api_router.get("/customers", response_model=List[Customer])
-async def get_customers(current_user: dict = Depends(get_current_user)):
-    query = {}
-    if current_user["role"] == "regional_manager":
-        query = {"region_id": current_user.get("region_id")}
-    customers = await db.customers.find(query, {"_id": 0}).to_list(10000)
-    return customers
+@api_router.get("/customers")
+async def get_customers(
+    region_id: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all customers"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        if region_id:
+            customers = await conn.fetch('SELECT * FROM customers WHERE region_id = $1 ORDER BY name', region_id)
+        else:
+            customers = await conn.fetch('SELECT * FROM customers ORDER BY name')
+        
+        return [dict(c) | {"created_at": str(c['created_at'])} for c in customers]
 
-@api_router.post("/customers", response_model=Customer)
+@api_router.post("/customers")
 async def create_customer(customer: CustomerCreate, current_user: dict = Depends(get_current_user)):
-    customer_obj = Customer(**customer.model_dump())
-    await db.customers.insert_one(customer_obj.model_dump())
-    return customer_obj
-
-@api_router.put("/customers/{customer_id}", response_model=Customer)
-async def update_customer(customer_id: str, customer_update: dict, current_user: dict = Depends(get_current_user)):
-    await db.customers.update_one({"id": customer_id}, {"$set": customer_update})
-    updated = await db.customers.find_one({"id": customer_id}, {"_id": 0})
-    return Customer(**updated)
-
-@api_router.delete("/customers/{customer_id}")
-async def delete_customer(customer_id: str, current_user: dict = Depends(get_current_user)):
-    await db.customers.delete_one({"id": customer_id})
-    return {"message": "Müşteri silindi"}
+    """Create new customer"""
+    pool = await get_db_pool()
+    customer_id = f"customer-{datetime.now().timestamp()}"
+    
+    async with pool.acquire() as conn:
+        await conn.execute('''
+            INSERT INTO customers (id, name, address, phone, email, region_id, tax_number, notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ''', customer_id, customer.name, customer.address, customer.phone, customer.email, 
+        customer.region_id, customer.tax_number, customer.notes)
+        
+        new_customer = await conn.fetchrow('SELECT * FROM customers WHERE id = $1', customer_id)
+        return dict(new_customer) | {"created_at": str(new_customer['created_at'])}
 
 # ============ PRODUCTS ============
 
-@api_router.get("/products", response_model=List[Product])
+@api_router.get("/products")
 async def get_products(current_user: dict = Depends(get_current_user)):
-    products = await db.products.find({"active": True}, {"_id": 0}).to_list(10000)
-    return products
+    """Get all products"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        products = await conn.fetch('SELECT * FROM products ORDER BY name')
+        return [dict(p) | {
+            "created_at": str(p['created_at']), 
+            "unit_price": float(p['unit_price']) if p['unit_price'] else 0,
+            "price_1_5": float(p['price_1_5']) if p['price_1_5'] else None,
+            "price_6_10": float(p['price_6_10']) if p['price_6_10'] else None,
+            "price_11_24": float(p['price_11_24']) if p['price_11_24'] else None
+        } for p in products]
 
-@api_router.post("/products", response_model=Product)
+@api_router.post("/products")
 async def create_product(product: ProductCreate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Sadece admin ürün ekleyebilir")
-    product_obj = Product(**product.model_dump())
-    await db.products.insert_one(product_obj.model_dump())
-    return product_obj
-
-@api_router.put("/products/{product_id}", response_model=Product)
-async def update_product(product_id: str, product_update: dict, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Yetkisiz erişim")
-    await db.products.update_one({"id": product_id}, {"$set": product_update})
-    updated = await db.products.find_one({"id": product_id}, {"_id": 0})
-    return Product(**updated)
-
-@api_router.delete("/products/{product_id}")
-async def delete_product(product_id: str, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Yetkisiz erişim")
-    await db.products.update_one({"id": product_id}, {"$set": {"active": False}})
-    return {"message": "Ürün devre dışı bırakıldı"}
+    """Create new product"""
+    pool = await get_db_pool()
+    product_id = f"product-{datetime.now().timestamp()}"
+    
+    async with pool.acquire() as conn:
+        await conn.execute('''
+            INSERT INTO products (id, name, code, unit_price, price_1_5, price_6_10, price_11_24, unit, category, description, photo_base64)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ''', product_id, product.name, product.code, product.unit_price, product.price_1_5, 
+        product.price_6_10, product.price_11_24, product.unit, product.category, product.description, product.photo_base64)
+        
+        new_product = await conn.fetchrow('SELECT * FROM products WHERE id = $1', product_id)
+        return dict(new_product) | {
+            "created_at": str(new_product['created_at']), 
+            "unit_price": float(new_product['unit_price']) if new_product['unit_price'] else 0,
+            "price_1_5": float(new_product['price_1_5']) if new_product['price_1_5'] else None,
+            "price_6_10": float(new_product['price_6_10']) if new_product['price_6_10'] else None,
+            "price_11_24": float(new_product['price_11_24']) if new_product['price_11_24'] else None
+        }
 
 # ============ VISITS ============
 
-@api_router.get("/visits", response_model=List[Visit])
-async def get_visits(current_user: dict = Depends(get_current_user)):
-    query = {}
-    if current_user["role"] == "salesperson":
-        query = {"salesperson_id": current_user["id"]}
-    elif current_user["role"] == "regional_manager":
-        team_users = await db.users.find({"region_id": current_user.get("region_id"), "role": "salesperson"}, {"_id": 0}).to_list(100)
-        team_ids = [u["id"] for u in team_users]
-        query = {"salesperson_id": {"$in": team_ids}}
+@api_router.get("/visits")
+async def get_visits(
+    salesperson_id: Optional[str] = Query(None),
+    customer_id: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all visits"""
+    pool = await get_db_pool()
     
-    visits = await db.visits.find(query, {"_id": 0}).to_list(10000)
-    return visits
+    async with pool.acquire() as conn:
+        if salesperson_id:
+            visits = await conn.fetch('SELECT * FROM visits WHERE salesperson_id = $1 ORDER BY visit_date DESC', salesperson_id)
+        elif customer_id:
+            visits = await conn.fetch('SELECT * FROM visits WHERE customer_id = $1 ORDER BY visit_date DESC', customer_id)
+        else:
+            visits = await conn.fetch('SELECT * FROM visits ORDER BY visit_date DESC LIMIT 100')
+        
+        return [dict(v) | {
+            "created_at": str(v['created_at']),
+            "visit_date": str(v['visit_date'])
+        } for v in visits]
 
-@api_router.post("/visits", response_model=Visit)
+@api_router.post("/visits")
 async def create_visit(visit: VisitCreate, current_user: dict = Depends(get_current_user)):
-    visit_data = visit.model_dump()
-    visit_data["salesperson_id"] = current_user["id"]  # Override with current user
-    visit_obj = Visit(**visit_data)
-    await db.visits.insert_one(visit_obj.model_dump())
-    return visit_obj
-
-@api_router.get("/visits/{visit_id}", response_model=Visit)
-async def get_visit(visit_id: str, current_user: dict = Depends(get_current_user)):
-    visit = await db.visits.find_one({"id": visit_id}, {"_id": 0})
-    if not visit:
-        raise HTTPException(status_code=404, detail="Ziyaret bulunamadı")
-    return Visit(**visit)
+    """Create new visit"""
+    pool = await get_db_pool()
+    visit_id = f"visit-{datetime.now().timestamp()}"
+    
+    async with pool.acquire() as conn:
+        await conn.execute('''
+            INSERT INTO visits (id, customer_id, salesperson_id, visit_date, notes, location)
+            VALUES ($1, $2, $3, $4, $5, $6)
+        ''', visit_id, visit.customer_id, visit.salesperson_id, visit.visit_date, 
+        visit.notes, json.dumps(visit.location) if visit.location else None)
+        
+        new_visit = await conn.fetchrow('SELECT * FROM visits WHERE id = $1', visit_id)
+        return dict(new_visit) | {
+            "created_at": str(new_visit['created_at']),
+            "visit_date": str(new_visit['visit_date'])
+        }
 
 # ============ SALES ============
 
-@api_router.get("/sales", response_model=List[Sale])
-async def get_sales(current_user: dict = Depends(get_current_user)):
-    query = {}
-    if current_user["role"] == "salesperson":
-        query = {"salesperson_id": current_user["id"]}
-    elif current_user["role"] == "regional_manager":
-        team_users = await db.users.find({"region_id": current_user.get("region_id"), "role": "salesperson"}, {"_id": 0}).to_list(100)
-        team_ids = [u["id"] for u in team_users]
-        query = {"salesperson_id": {"$in": team_ids}}
+@api_router.get("/sales")
+async def get_sales(
+    salesperson_id: Optional[str] = Query(None),
+    customer_id: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all sales"""
+    pool = await get_db_pool()
     
-    sales = await db.sales.find(query, {"_id": 0}).to_list(10000)
-    return sales
+    async with pool.acquire() as conn:
+        if salesperson_id:
+            sales = await conn.fetch('SELECT * FROM sales WHERE salesperson_id = $1 ORDER BY sale_date DESC', salesperson_id)
+        elif customer_id:
+            sales = await conn.fetch('SELECT * FROM sales WHERE customer_id = $1 ORDER BY sale_date DESC', customer_id)
+        else:
+            sales = await conn.fetch('SELECT * FROM sales ORDER BY sale_date DESC LIMIT 100')
+        
+        return [dict(s) | {
+            "created_at": str(s['created_at']),
+            "sale_date": str(s['sale_date']),
+            "total_amount": float(s['total_amount'])
+        } for s in sales]
 
-@api_router.post("/sales", response_model=Sale)
+@api_router.post("/sales")
 async def create_sale(sale: SaleCreate, current_user: dict = Depends(get_current_user)):
-    sale_obj = Sale(**sale.model_dump(), salesperson_id=current_user["id"])
-    await db.sales.insert_one(sale_obj.model_dump())
-    return sale_obj
-
-@api_router.get("/sales/commission")
-async def get_commission_data(current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "salesperson":
-        raise HTTPException(status_code=403, detail="Sadece plasiyerler prim bilgisini görebilir")
+    """Create new sale"""
+    pool = await get_db_pool()
+    sale_id = f"sale-{datetime.now().timestamp()}"
     
-    now = datetime.now(timezone.utc)
-    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
-    
-    my_sales = await db.sales.find({
-        "salesperson_id": current_user["id"],
-        "created_at": {"$gte": start_of_month}
-    }).to_list(10000)
-    
-    monthly_total = sum([s["total_amount"] for s in my_sales])
-    
-    emoji = "🌱"
-    level = "Başlangıç"
-    if monthly_total > 50000:
-        emoji = "🏆"
-        level = "Şampiyon"
-    elif monthly_total > 30000:
-        emoji = "🔥"
-        level = "Ateşli"
-    elif monthly_total > 10000:
-        emoji = "💪"
-        level = "Güçlü"
-    
-    return {
-        "monthly_total": monthly_total,
-        "emoji": emoji,
-        "level": level,
-        "sales_count": len(my_sales)
-    }
+    async with pool.acquire() as conn:
+        await conn.execute('''
+            INSERT INTO sales (id, customer_id, salesperson_id, sale_date, items, total_amount, notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ''', sale_id, sale.customer_id, current_user['id'], sale.sale_date, 
+        json.dumps([item.dict() for item in sale.items]), sale.total_amount, sale.notes)
+        
+        new_sale = await conn.fetchrow('SELECT * FROM sales WHERE id = $1', sale_id)
+        return dict(new_sale) | {
+            "created_at": str(new_sale['created_at']),
+            "sale_date": str(new_sale['sale_date']),
+            "total_amount": float(new_sale['total_amount'])
+        }
 
 # ============ COLLECTIONS ============
 
-@api_router.get("/collections", response_model=List[Collection])
-async def get_collections(current_user: dict = Depends(get_current_user)):
-    query = {}
-    if current_user["role"] == "salesperson":
-        query = {"salesperson_id": current_user["id"]}
-    elif current_user["role"] == "regional_manager":
-        team_users = await db.users.find({"region_id": current_user.get("region_id"), "role": "salesperson"}, {"_id": 0}).to_list(100)
-        team_ids = [u["id"] for u in team_users]
-        query = {"salesperson_id": {"$in": team_ids}}
+@api_router.get("/collections")
+async def get_collections(
+    sale_id: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all collections"""
+    pool = await get_db_pool()
     
-    collections = await db.collections.find(query, {"_id": 0}).to_list(10000)
-    return collections
+    async with pool.acquire() as conn:
+        if sale_id:
+            collections = await conn.fetch('SELECT * FROM collections WHERE sale_id = $1 ORDER BY collection_date DESC', sale_id)
+        else:
+            collections = await conn.fetch('SELECT * FROM collections ORDER BY collection_date DESC LIMIT 100')
+        
+        return [dict(c) | {
+            "created_at": str(c['created_at']),
+            "collection_date": str(c['collection_date']),
+            "amount": float(c['amount'])
+        } for c in collections]
 
-@api_router.post("/collections", response_model=Collection)
+@api_router.post("/collections")
 async def create_collection(collection: CollectionCreate, current_user: dict = Depends(get_current_user)):
-    collection_obj = Collection(**collection.model_dump(), salesperson_id=current_user["id"])
-    await db.collections.insert_one(collection_obj.model_dump())
-    return collection_obj
-
-# ============ DOCUMENTS ============
-
-@api_router.get("/documents", response_model=List[Document])
-async def get_documents(current_user: dict = Depends(get_current_user)):
-    documents = await db.documents.find({}, {"_id": 0}).to_list(1000)
-    return documents
-
-@api_router.post("/documents", response_model=Document)
-async def create_document(document: DocumentCreate, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Sadece admin doküman ekleyebilir")
-    document_obj = Document(**document.model_dump())
-    await db.documents.insert_one(document_obj.model_dump())
-    return document_obj
+    """Create new collection"""
+    pool = await get_db_pool()
+    collection_id = f"collection-{datetime.now().timestamp()}"
+    
+    async with pool.acquire() as conn:
+        await conn.execute('''
+            INSERT INTO collections (id, sale_id, amount, collection_date, payment_method, notes)
+            VALUES ($1, $2, $3, $4, $5, $6)
+        ''', collection_id, collection.sale_id, collection.amount, collection.collection_date, 
+        collection.payment_method, collection.notes)
+        
+        new_collection = await conn.fetchrow('SELECT * FROM collections WHERE id = $1', collection_id)
+        return dict(new_collection) | {
+            "created_at": str(new_collection['created_at']),
+            "collection_date": str(new_collection['collection_date']),
+            "amount": float(new_collection['amount'])
+        }
 
 # ============ REPORTS ============
 
 @api_router.get("/reports/sales")
-async def get_sales_report(start_date: str = None, end_date: str = None, current_user: dict = Depends(get_current_user)):
-    query = {}
-    if current_user["role"] == "salesperson":
-        query["salesperson_id"] = current_user["id"]
-    elif current_user["role"] == "regional_manager":
-        team_users = await db.users.find({"region_id": current_user.get("region_id"), "role": "salesperson"}, {"_id": 0}).to_list(100)
-        team_ids = [u["id"] for u in team_users]
-        query["salesperson_id"] = {"$in": team_ids}
+async def get_sales_report(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get sales report"""
+    pool = await get_db_pool()
     
-    if start_date:
-        query["sale_date"] = {"$gte": start_date}
-    if end_date:
-        if "sale_date" in query:
-            query["sale_date"]["$lte"] = end_date
+    async with pool.acquire() as conn:
+        if start_date and end_date:
+            total = await conn.fetchval(
+                'SELECT COALESCE(SUM(total_amount), 0) FROM sales WHERE sale_date BETWEEN $1 AND $2',
+                start_date, end_date
+            )
         else:
-            query["sale_date"] = {"$lte": end_date}
-    
-    sales = await db.sales.find(query, {"_id": 0}).to_list(10000)
-    total_amount = sum([s["total_amount"] for s in sales])
-    
-    return {
-        "sales": sales,
-        "total_count": len(sales),
-        "total_amount": total_amount
-    }
-
-@api_router.get("/reports/visits")
-async def get_visits_report(start_date: str = None, end_date: str = None, current_user: dict = Depends(get_current_user)):
-    query = {}
-    if current_user["role"] == "salesperson":
-        query["salesperson_id"] = current_user["id"]
-    elif current_user["role"] == "regional_manager":
-        team_users = await db.users.find({"region_id": current_user.get("region_id"), "role": "salesperson"}, {"_id": 0}).to_list(100)
-        team_ids = [u["id"] for u in team_users]
-        query["salesperson_id"] = {"$in": team_ids}
-    
-    if start_date:
-        query["visit_date"] = {"$gte": start_date}
-    if end_date:
-        if "visit_date" in query:
-            query["visit_date"]["$lte"] = end_date
-        else:
-            query["visit_date"] = {"$lte": end_date}
-    
-    visits = await db.visits.find(query, {"_id": 0, "photo_base64": 0}).to_list(10000)
-    
-    return {
-        "visits": visits,
-        "total_count": len(visits)
-    }
-
-# ============ INIT ADMIN ============
-
-@api_router.post("/init")
-async def initialize_system():
-    # Check if admin exists
-    admin_exists = await db.users.find_one({"role": "admin"})
-    if admin_exists:
-        return {"message": "Sistem zaten başlatılmış"}
-    
-    # Create default admin
-    admin = User(
-        username="admin",
-        email="admin@pedizone.com",
-        full_name="PediZone Admin",
-        role="admin",
-        password_hash=get_password_hash("admin123")
-    )
-    await db.users.insert_one(admin.model_dump())
-    
-    # Create sample region
-    region = Region(
-        name="İstanbul Anadolu",
-        description="İstanbul Anadolu bölgesi"
-    )
-    await db.regions.insert_one(region.model_dump())
-    
-    return {"message": "Sistem başlatıldı", "admin_username": "admin", "admin_password": "admin123"}
+            total = await conn.fetchval('SELECT COALESCE(SUM(total_amount), 0) FROM sales')
+        
+        return {
+            "total_revenue": float(total or 0),
+            "period": f"{start_date} - {end_date}" if start_date and end_date else "All time"
+        }
 
 app.include_router(api_router)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+@app.on_event("startup")
+async def startup():
+    await get_db_pool()
+    await init_database()
 
 @app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+async def shutdown():
+    global pool
+    if pool:
+        await pool.close()
