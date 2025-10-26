@@ -534,6 +534,17 @@ async def create_product(product: ProductCreate, current_user: dict = Depends(ge
             "price_11_24": float(new_product['price_11_24']) if new_product['price_11_24'] else None
         }
 
+@api_router.delete("/products/{product_id}")
+async def delete_product(product_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a product"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        result = await conn.execute('DELETE FROM products WHERE id = $1', product_id)
+        if result == 'DELETE 0':
+            raise HTTPException(status_code=404, detail="Product not found")
+        return {"message": "Product deleted successfully"}
+
 # ============ VISITS ============
 
 @api_router.get("/visits")
