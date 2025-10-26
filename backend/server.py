@@ -196,6 +196,8 @@ async def init_database():
                 visit_date TIMESTAMP,
                 notes TEXT,
                 location JSONB,
+                photo_base64 TEXT,
+                status VARCHAR DEFAULT 'gorusuldu',
                 created_at TIMESTAMP DEFAULT NOW()
             )
         ''')
