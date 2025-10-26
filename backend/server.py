@@ -121,6 +121,13 @@ class CollectionCreate(BaseModel):
     payment_method: str
     notes: Optional[str] = None
 
+class DocumentCreate(BaseModel):
+    customer_id: str
+    title: str
+    file_name: str
+    file_base64: str
+    file_type: Optional[str] = None
+
 # ============ DATABASE INIT ============
 
 async def init_database():
