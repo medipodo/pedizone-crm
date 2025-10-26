@@ -688,7 +688,9 @@ async def create_collection(collection: CollectionCreate, current_user: dict = D
     
     # Parse collection_date to datetime if it's a string
     if isinstance(collection.collection_date, str):
-        collection_date_parsed = dateparser.parse(collection.collection_date)
+        # Remove 'Z' and parse as ISO format
+        date_str = collection.collection_date.replace('Z', '+00:00')
+        collection_date_parsed = datetime.fromisoformat(date_str)
     else:
         collection_date_parsed = collection.collection_date
     
