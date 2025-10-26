@@ -506,6 +506,17 @@ async def create_customer(customer: CustomerCreate, current_user: dict = Depends
         new_customer = await conn.fetchrow('SELECT * FROM customers WHERE id = $1', customer_id)
         return dict(new_customer) | {"created_at": str(new_customer['created_at'])}
 
+@api_router.delete("/customers/{customer_id}")
+async def delete_customer(customer_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a customer"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        result = await conn.execute('DELETE FROM customers WHERE id = $1', customer_id)
+        if result == 'DELETE 0':
+            raise HTTPException(status_code=404, detail="Customer not found")
+        return {"message": "Customer deleted successfully"}
+
 # ============ PRODUCTS ============
 
 @api_router.get("/products")
