@@ -673,6 +673,17 @@ async def create_sale(sale: SaleCreate, current_user: dict = Depends(get_current
             "total_amount": float(new_sale['total_amount'])
         }
 
+@api_router.delete("/sales/{sale_id}")
+async def delete_sale(sale_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a sale"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        result = await conn.execute('DELETE FROM sales WHERE id = $1', sale_id)
+        if result == 'DELETE 0':
+            raise HTTPException(status_code=404, detail="Sale not found")
+        return {"message": "Sale deleted successfully"}
+
 # ============ COLLECTIONS ============
 
 @api_router.get("/collections")
