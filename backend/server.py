@@ -661,6 +661,37 @@ async def create_collection(collection: CollectionCreate, current_user: dict = D
             "amount": float(new_collection['amount'])
         }
 
+# ============ DOCUMENTS ============
+
+@api_router.get("/documents")
+async def get_documents(customer_id: Optional[str] = Query(None)):
+    """Get all documents"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        if customer_id:
+            documents = await conn.fetch('SELECT * FROM documents WHERE customer_id = $1 ORDER BY created_at DESC', customer_id)
+        else:
+            documents = await conn.fetch('SELECT * FROM documents ORDER BY created_at DESC LIMIT 100')
+        
+        return [dict(d) | {"created_at": str(d['created_at'])} for d in documents]
+
+@api_router.post("/documents")
+async def create_document(document: DocumentCreate, current_user: dict = Depends(get_current_user)):
+    """Create new document"""
+    pool = await get_db_pool()
+    document_id = f"document-{datetime.now().timestamp()}"
+    
+    async with pool.acquire() as conn:
+        await conn.execute('''
+            INSERT INTO documents (id, customer_id, title, file_name, file_base64, file_type, uploaded_by)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ''', document_id, document.customer_id, document.title, document.file_name, 
+        document.file_base64, document.file_type, current_user['id'])
+        
+        new_document = await conn.fetchrow('SELECT * FROM documents WHERE id = $1', document_id)
+        return dict(new_document) | {"created_at": str(new_document['created_at'])}
+
 # ============ REPORTS ============
 
 @api_router.get("/reports/sales")
