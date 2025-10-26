@@ -763,6 +763,17 @@ async def create_collection(collection: CollectionCreate, current_user: dict = D
             "amount": float(new_collection['amount'])
         }
 
+@api_router.delete("/collections/{collection_id}")
+async def delete_collection(collection_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a collection"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        result = await conn.execute('DELETE FROM collections WHERE id = $1', collection_id)
+        if result == 'DELETE 0':
+            raise HTTPException(status_code=404, detail="Collection not found")
+        return {"message": "Collection deleted successfully"}
+
 # ============ DOCUMENTS ============
 
 @api_router.get("/documents")
