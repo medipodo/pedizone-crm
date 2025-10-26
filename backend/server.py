@@ -562,11 +562,18 @@ async def create_visit(visit: VisitCreate, current_user: dict = Depends(get_curr
     pool = await get_db_pool()
     visit_id = f"visit-{datetime.now().timestamp()}"
     
+    # Parse visit_date to datetime if it's a string
+    if isinstance(visit.visit_date, str):
+        from dateutil import parser
+        visit_date_parsed = parser.parse(visit.visit_date)
+    else:
+        visit_date_parsed = visit.visit_date
+    
     async with pool.acquire() as conn:
         await conn.execute('''
             INSERT INTO visits (id, customer_id, salesperson_id, visit_date, notes, location)
             VALUES ($1, $2, $3, $4, $5, $6)
-        ''', visit_id, visit.customer_id, visit.salesperson_id, visit.visit_date, 
+        ''', visit_id, visit.customer_id, visit.salesperson_id, visit_date_parsed, 
         visit.notes, json.dumps(visit.location) if visit.location else None)
         
         new_visit = await conn.fetchrow('SELECT * FROM visits WHERE id = $1', visit_id)
