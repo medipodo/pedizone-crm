@@ -805,6 +805,17 @@ async def create_document(document: DocumentCreate, current_user: dict = Depends
         new_document = await conn.fetchrow('SELECT * FROM documents WHERE id = $1', document_id)
         return dict(new_document) | {"created_at": str(new_document['created_at'])}
 
+@api_router.delete("/documents/{document_id}")
+async def delete_document(document_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a document"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        result = await conn.execute('DELETE FROM documents WHERE id = $1', document_id)
+        if result == 'DELETE 0':
+            raise HTTPException(status_code=404, detail="Document not found")
+        return {"message": "Document deleted successfully"}
+
 # ============ REPORTS ============
 
 @api_router.get("/reports/sales")
