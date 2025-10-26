@@ -462,6 +462,17 @@ async def create_region(region: RegionCreate, current_user: dict = Depends(get_c
         new_region = await conn.fetchrow('SELECT * FROM regions WHERE id = $1', region_id)
         return dict(new_region) | {"created_at": str(new_region['created_at'])}
 
+@api_router.delete("/regions/{region_id}")
+async def delete_region(region_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a region"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        result = await conn.execute('DELETE FROM regions WHERE id = $1', region_id)
+        if result == 'DELETE 0':
+            raise HTTPException(status_code=404, detail="Region not found")
+        return {"message": "Region deleted successfully"}
+
 # ============ CUSTOMERS ============
 
 @api_router.get("/customers")
