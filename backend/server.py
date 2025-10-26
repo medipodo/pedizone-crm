@@ -662,8 +662,7 @@ async def create_collection(collection: CollectionCreate, current_user: dict = D
     
     # Parse collection_date to datetime if it's a string
     if isinstance(collection.collection_date, str):
-        from dateutil import parser
-        collection_date_parsed = parser.parse(collection.collection_date)
+        collection_date_parsed = dateparser.parse(collection.collection_date)
     else:
         collection_date_parsed = collection.collection_date
     
