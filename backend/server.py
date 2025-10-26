@@ -228,6 +228,20 @@ async def init_database():
                 created_at TIMESTAMP DEFAULT NOW()
             )
         ''')
+        
+        # Documents table
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS documents (
+                id VARCHAR PRIMARY KEY,
+                customer_id VARCHAR,
+                title VARCHAR NOT NULL,
+                file_name VARCHAR NOT NULL,
+                file_base64 TEXT NOT NULL,
+                file_type VARCHAR,
+                uploaded_by VARCHAR,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
 
 # ============ AUTH ============
 
