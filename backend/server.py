@@ -661,11 +661,18 @@ async def create_collection(collection: CollectionCreate, current_user: dict = D
     pool = await get_db_pool()
     collection_id = f"collection-{datetime.now().timestamp()}"
     
+    # Parse collection_date to datetime if it's a string
+    if isinstance(collection.collection_date, str):
+        from dateutil import parser
+        collection_date_parsed = parser.parse(collection.collection_date)
+    else:
+        collection_date_parsed = collection.collection_date
+    
     async with pool.acquire() as conn:
         await conn.execute('''
             INSERT INTO collections (id, sale_id, amount, collection_date, payment_method, notes)
             VALUES ($1, $2, $3, $4, $5, $6)
-        ''', collection_id, collection.sale_id, collection.amount, collection.collection_date, 
+        ''', collection_id, collection.sale_id, collection.amount, collection_date_parsed, 
         collection.payment_method, collection.notes)
         
         new_collection = await conn.fetchrow('SELECT * FROM collections WHERE id = $1', collection_id)
