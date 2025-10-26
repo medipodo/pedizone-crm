@@ -625,6 +625,17 @@ async def create_visit(visit: VisitCreate, current_user: dict = Depends(get_curr
             "visit_date": str(new_visit['visit_date'])
         }
 
+@api_router.delete("/visits/{visit_id}")
+async def delete_visit(visit_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a visit"""
+    pool = await get_db_pool()
+    
+    async with pool.acquire() as conn:
+        result = await conn.execute('DELETE FROM visits WHERE id = $1', visit_id)
+        if result == 'DELETE 0':
+            raise HTTPException(status_code=404, detail="Visit not found")
+        return {"message": "Visit deleted successfully"}
+
 # ============ SALES ============
 
 @api_router.get("/sales")
