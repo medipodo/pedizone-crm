@@ -587,7 +587,9 @@ async def create_visit(visit: VisitCreate, current_user: dict = Depends(get_curr
     
     # Parse visit_date to datetime if it's a string
     if isinstance(visit.visit_date, str):
-        visit_date_parsed = dateparser.parse(visit.visit_date)
+        # Remove 'Z' and parse as ISO format
+        date_str = visit.visit_date.replace('Z', '+00:00')
+        visit_date_parsed = datetime.fromisoformat(date_str)
     else:
         visit_date_parsed = visit.visit_date
     
