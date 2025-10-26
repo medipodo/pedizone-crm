@@ -614,8 +614,7 @@ async def create_sale(sale: SaleCreate, current_user: dict = Depends(get_current
     
     # Parse sale_date to datetime if it's a string
     if isinstance(sale.sale_date, str):
-        from dateutil import parser
-        sale_date_parsed = parser.parse(sale.sale_date)
+        sale_date_parsed = dateparser.parse(sale.sale_date)
     else:
         sale_date_parsed = sale.sale_date
     
