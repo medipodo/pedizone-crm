@@ -565,8 +565,7 @@ async def create_visit(visit: VisitCreate, current_user: dict = Depends(get_curr
     
     # Parse visit_date to datetime if it's a string
     if isinstance(visit.visit_date, str):
-        from dateutil import parser
-        visit_date_parsed = parser.parse(visit.visit_date)
+        visit_date_parsed = dateparser.parse(visit.visit_date)
     else:
         visit_date_parsed = visit.visit_date
     
