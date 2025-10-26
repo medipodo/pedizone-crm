@@ -638,7 +638,9 @@ async def create_sale(sale: SaleCreate, current_user: dict = Depends(get_current
     
     # Parse sale_date to datetime if it's a string
     if isinstance(sale.sale_date, str):
-        sale_date_parsed = dateparser.parse(sale.sale_date)
+        # Remove 'Z' and parse as ISO format
+        date_str = sale.sale_date.replace('Z', '+00:00')
+        sale_date_parsed = datetime.fromisoformat(date_str)
     else:
         sale_date_parsed = sale.sale_date
     
