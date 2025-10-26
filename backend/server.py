@@ -612,11 +612,18 @@ async def create_sale(sale: SaleCreate, current_user: dict = Depends(get_current
     pool = await get_db_pool()
     sale_id = f"sale-{datetime.now().timestamp()}"
     
+    # Parse sale_date to datetime if it's a string
+    if isinstance(sale.sale_date, str):
+        from dateutil import parser
+        sale_date_parsed = parser.parse(sale.sale_date)
+    else:
+        sale_date_parsed = sale.sale_date
+    
     async with pool.acquire() as conn:
         await conn.execute('''
             INSERT INTO sales (id, customer_id, salesperson_id, sale_date, items, total_amount, notes)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ''', sale_id, sale.customer_id, current_user['id'], sale.sale_date, 
+        ''', sale_id, sale.customer_id, current_user['id'], sale_date_parsed, 
         json.dumps([item.dict() for item in sale.items]), sale.total_amount, sale.notes)
         
         new_sale = await conn.fetchrow('SELECT * FROM sales WHERE id = $1', sale_id)
