@@ -118,38 +118,45 @@ class PediZoneAPITester:
             self.log(f"❌ Dashboard alias failed with status {response.status_code}: {response.text}", "ERROR")
             return False
     
-    def test_customer_creation(self):
-        """Test 3: Customer Creation API"""
-        self.log("=== Testing Customer Creation ===")
+    def test_dashboard_stats(self):
+        """Test 3: Dashboard Stats Endpoint - GET /api/dashboard/stats"""
+        self.log("=== Testing Dashboard Stats Endpoint ===")
         
-        customer_data = {
-            "name": "Test Customer",
-            "address": "Test Address",
-            "phone": "1234567890",
-            "email": "test@test.com",
-            "region_id": "test-region-id",
-            "tax_number": "1234567890",
-            "notes": "Test notes"
-        }
-        
-        response = self.make_request("POST", "/customers", customer_data)
+        response = self.make_request("GET", "/dashboard/stats")
         
         if not response:
-            self.log("Customer creation request failed - no response", "ERROR")
+            self.log("Dashboard stats request failed - no response", "ERROR")
             return False
             
         if response.status_code == 200:
             data = response.json()
-            customer_id = data.get("id")
-            if customer_id:
-                self.test_data["customer_id"] = customer_id
-                self.log(f"✅ Customer created successfully - ID: {customer_id}")
-                return True
-            else:
-                self.log("❌ Customer creation response missing ID", "ERROR")
+            
+            # Check for expected dashboard fields
+            expected_fields = ["total_sales", "total_visits"]
+            missing_fields = [field for field in expected_fields if field not in data]
+            
+            if missing_fields:
+                self.log(f"❌ Dashboard stats missing fields: {missing_fields}", "ERROR")
                 return False
+            
+            self.log("✅ Dashboard stats endpoint working")
+            self.log(f"   Total Sales: {data.get('total_sales', 0)}")
+            self.log(f"   Total Visits: {data.get('total_visits', 0)}")
+            
+            # Compare with alias endpoint data
+            if "dashboard_alias" in self.test_data:
+                alias_data = self.test_data["dashboard_alias"]
+                if data == alias_data:
+                    self.log("✅ Dashboard alias and stats return identical data")
+                else:
+                    self.log("❌ Dashboard alias and stats return different data", "ERROR")
+                    self.log(f"   Alias: {alias_data}")
+                    self.log(f"   Stats: {data}")
+                    return False
+            
+            return True
         else:
-            self.log(f"❌ Customer creation failed with status {response.status_code}: {response.text}", "ERROR")
+            self.log(f"❌ Dashboard stats failed with status {response.status_code}: {response.text}", "ERROR")
             return False
     
     def test_visit_creation(self):
