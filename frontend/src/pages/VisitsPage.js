@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Trash2 } from 'lucide-react';
-import { Plus, Eye, Camera } from 'lucide-react';
+import { Plus, Eye, Camera, Trash2 } from 'lucide-react';
 
 const VisitsPage = ({ user, setUser }) => {
   const [visits, setVisits] = useState([]);
