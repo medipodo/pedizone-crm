@@ -593,7 +593,8 @@ async def get_visits(
         
         return [dict(v) | {
             "created_at": str(v['created_at']),
-            "visit_date": str(v['visit_date'])
+            "visit_date": str(v['visit_date']),
+            "location": json.loads(v['location']) if v.get('location') and isinstance(v['location'], str) else v.get('location')
         } for v in visits]
 
 @api_router.post("/visits")
