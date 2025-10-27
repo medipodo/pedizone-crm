@@ -130,7 +130,11 @@ const VisitMap = ({ visits = [], sales = [], customers = [] }) => {
           
           {/* Ziyaret noktaları */}
           {filteredVisits.map((visit) => {
-            if (!visit.latitude || !visit.longitude) return null;
+            // Location object veya direkt latitude/longitude olabilir
+            const lat = visit.location?.latitude || visit.latitude;
+            const lng = visit.location?.longitude || visit.longitude;
+            
+            if (!lat || !lng) return null;
             
             const status = getVisitStatus(visit);
             const color = getStatusColor(status);
@@ -139,7 +143,7 @@ const VisitMap = ({ visits = [], sales = [], customers = [] }) => {
             return (
               <CircleMarker
                 key={visit.id}
-                center={[visit.latitude, visit.longitude]}
+                center={[parseFloat(lat), parseFloat(lng)]}
                 radius={8}
                 fillColor={color}
                 color="#fff"
