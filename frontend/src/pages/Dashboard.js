@@ -116,7 +116,11 @@ const Dashboard = ({ user, setUser }) => {
               )}
 
               {/* Total Visits */}
-              <div className="stat-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm" data-testid="stat-total-visits">
+              <div 
+                onClick={() => navigate('/visits')}
+                className="stat-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm cursor-pointer hover:shadow-lg transition-all hover:border-[#E50019]" 
+                data-testid="stat-total-visits"
+              >
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
                     <FileText className="text-[#E50019]" size={24} />
