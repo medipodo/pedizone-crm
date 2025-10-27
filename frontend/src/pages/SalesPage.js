@@ -353,6 +353,7 @@ const SalesPage = ({ user, setUser }) => {
                   )}
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ürün Sayısı</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Toplam</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -366,6 +367,16 @@ const SalesPage = ({ user, setUser }) => {
                     <td className="px-6 py-4 text-sm text-gray-700">{sale.items.length} ürün</td>
                     <td className="px-6 py-4 text-right text-sm font-semibold text-[#E50019]">
                       {sale.total_amount.toLocaleString('tr-TR')} ₺
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(sale.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
                     </td>
                   </tr>
                 ))}
