@@ -101,6 +101,18 @@ const SalesPage = ({ user, setUser }) => {
     }
   };
 
+  const handleDelete = async (saleId) => {
+    if (!window.confirm('Bu satışı silmek istediğinizden emin misiniz?')) return;
+    
+    try {
+      await axiosInstance.delete(`/sales/${saleId}`);
+      toast.success('Satış silindi');
+      fetchSales();
+    } catch (error) {
+      toast.error('Silme işlemi başarısız');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       customer_id: '',
