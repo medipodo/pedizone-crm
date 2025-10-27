@@ -264,6 +264,12 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 # ============ DASHBOARD ============
 
+
+@api_router.get("/dashboard")
+async def get_dashboard(current_user: dict = Depends(get_current_user)):
+    """Alias for /dashboard/stats"""
+    return await get_dashboard_stats(current_user)
+
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     role = current_user["role"]
