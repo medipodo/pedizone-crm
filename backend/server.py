@@ -414,8 +414,12 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
 # ============ USERS ============
 
 @api_router.get("/users", response_model=List[UserResponse])
-async def get_users():
-    """Get all users"""
+async def get_users(current_user: dict = Depends(get_current_user)):
+    """Get all users - Admin only"""
+    # Check if user is admin
+    if current_user.get('role') != 'admin':
+        raise HTTPException(status_code=403, detail="Sadece yöneticiler kullanıcı listesini görebilir")
+    
     pool = await get_db_pool()
     
     async with pool.acquire() as conn:
