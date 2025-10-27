@@ -92,6 +92,17 @@ const VisitsPage = ({ user, setUser }) => {
     }
   };
 
+  const handleDelete = async (visitId) => {
+    if (!window.confirm('Bu ziyareti silmek istediğinizden emin misiniz?')) return;
+    try {
+      await axiosInstance.delete(`/visits/${visitId}`);
+      toast.success('Ziyaret silindi');
+      fetchVisits();
+    } catch (error) {
+      toast.error('Silme işlemi başarısız');
+    }
+  };
+
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
