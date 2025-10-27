@@ -159,41 +159,77 @@ class PediZoneAPITester:
             self.log(f"❌ Dashboard stats failed with status {response.status_code}: {response.text}", "ERROR")
             return False
     
-    def test_visit_creation(self):
-        """Test 4: Visit Creation API"""
-        self.log("=== Testing Visit Creation ===")
+    def test_visits_api(self):
+        """Test 4: Visits API - GET /api/visits"""
+        self.log("=== Testing Visits API ===")
         
-        if "customer_id" not in self.test_data:
-            self.log("❌ Cannot test visit creation - no customer_id available", "ERROR")
-            return False
-        
-        visit_data = {
-            "customer_id": self.test_data["customer_id"],
-            "salesperson_id": "auto-set-from-token",  # This should be overridden by backend
-            "visit_date": "2025-10-23T10:00:00Z",
-            "notes": "Test visit",
-            "location": {"latitude": 41.0082, "longitude": 28.9784},
-            "status": "gorusuldu"
-        }
-        
-        response = self.make_request("POST", "/visits", visit_data)
+        response = self.make_request("GET", "/visits")
         
         if not response:
-            self.log("Visit creation request failed - no response", "ERROR")
+            self.log("Visits API request failed - no response", "ERROR")
             return False
             
         if response.status_code == 200:
             data = response.json()
-            visit_id = data.get("id")
-            if visit_id:
-                self.test_data["visit_id"] = visit_id
-                self.log(f"✅ Visit created successfully - ID: {visit_id}")
-                return True
-            else:
-                self.log("❌ Visit creation response missing ID", "ERROR")
+            
+            if not isinstance(data, list):
+                self.log("❌ Visits API should return a list", "ERROR")
                 return False
+            
+            self.log(f"✅ Visits API working - returned {len(data)} visits")
+            
+            # Check visit data structure if visits exist
+            if len(data) > 0:
+                visit = data[0]
+                
+                # Check for location object
+                if "location" not in visit:
+                    self.log("❌ Visit missing location field", "ERROR")
+                    return False
+                
+                location = visit.get("location")
+                if location and isinstance(location, dict):
+                    if "latitude" in location and "longitude" in location:
+                        self.log("✅ Visit has location with latitude/longitude")
+                        self.log(f"   Sample location: {location}")
+                    else:
+                        self.log("❌ Location object missing latitude/longitude", "ERROR")
+                        return False
+                
+                # Check visit_date format
+                if "visit_date" not in visit:
+                    self.log("❌ Visit missing visit_date field", "ERROR")
+                    return False
+                
+                visit_date = visit.get("visit_date")
+                if visit_date:
+                    self.log(f"✅ Visit has visit_date: {visit_date}")
+                    # Check if it's in ISO format (basic validation)
+                    if "T" in visit_date or "-" in visit_date:
+                        self.log("✅ Visit date appears to be in ISO format")
+                    else:
+                        self.log("❌ Visit date not in expected ISO format", "ERROR")
+                        return False
+                
+                # Check status field
+                if "status" not in visit:
+                    self.log("❌ Visit missing status field", "ERROR")
+                    return False
+                
+                status = visit.get("status")
+                expected_statuses = ["gorusuldu", "anlasildi", "randevu_alindi"]
+                if status in expected_statuses:
+                    self.log(f"✅ Visit has valid status: {status}")
+                else:
+                    self.log(f"❌ Visit has unexpected status: {status}", "ERROR")
+                    return False
+                
+            else:
+                self.log("ℹ️ No visits found in database - structure validation skipped")
+            
+            return True
         else:
-            self.log(f"❌ Visit creation failed with status {response.status_code}: {response.text}", "ERROR")
+            self.log(f"❌ Visits API failed with status {response.status_code}: {response.text}", "ERROR")
             return False
     
     def test_sales_creation(self):
