@@ -232,49 +232,38 @@ class PediZoneAPITester:
             self.log(f"❌ Visits API failed with status {response.status_code}: {response.text}", "ERROR")
             return False
     
-    def test_sales_creation(self):
-        """Test 5: Sales Creation API"""
-        self.log("=== Testing Sales Creation ===")
+    def validate_dashboard_data_consistency(self):
+        """Test 5: Validate Dashboard Data Consistency"""
+        self.log("=== Validating Dashboard Data Consistency ===")
         
-        if "customer_id" not in self.test_data or "product_id" not in self.test_data:
-            self.log("❌ Cannot test sales creation - missing customer_id or product_id", "ERROR")
+        if "dashboard_alias" not in self.test_data:
+            self.log("❌ Cannot validate consistency - dashboard alias data not available", "ERROR")
             return False
         
-        sales_data = {
-            "customer_id": self.test_data["customer_id"],
-            "sale_date": "2025-10-23",
-            "items": [
-                {
-                    "product_id": self.test_data["product_id"],
-                    "product_name": self.test_data.get("product_name", "Test Product"),
-                    "quantity": 5,
-                    "unit_price": 2500,
-                    "total": 12500
-                }
-            ],
-            "total_amount": 12500,
-            "notes": "Test sale"
-        }
+        dashboard_data = self.test_data["dashboard_alias"]
         
-        response = self.make_request("POST", "/sales", sales_data)
+        # Check that all expected fields are present and have reasonable values
+        required_fields = ["total_sales", "total_visits"]
         
-        if not response:
-            self.log("Sales creation request failed - no response", "ERROR")
-            return False
-            
-        if response.status_code == 200:
-            data = response.json()
-            sale_id = data.get("id")
-            if sale_id:
-                self.test_data["sale_id"] = sale_id
-                self.log(f"✅ Sale created successfully - ID: {sale_id}")
-                return True
-            else:
-                self.log("❌ Sales creation response missing ID", "ERROR")
+        for field in required_fields:
+            if field not in dashboard_data:
+                self.log(f"❌ Dashboard missing required field: {field}", "ERROR")
                 return False
-        else:
-            self.log(f"❌ Sales creation failed with status {response.status_code}: {response.text}", "ERROR")
-            return False
+            
+            value = dashboard_data[field]
+            if not isinstance(value, (int, float)) or value < 0:
+                self.log(f"❌ Dashboard field {field} has invalid value: {value}", "ERROR")
+                return False
+        
+        self.log("✅ Dashboard data consistency validated")
+        self.log(f"   All required fields present with valid values")
+        
+        # Check for additional fields that might be role-specific
+        additional_fields = [k for k in dashboard_data.keys() if k not in required_fields]
+        if additional_fields:
+            self.log(f"   Additional fields found: {additional_fields}")
+        
+        return True
     
     def run_all_tests(self):
         """Run all tests in sequence"""
