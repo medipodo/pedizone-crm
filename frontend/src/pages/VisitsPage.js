@@ -395,14 +395,24 @@ const VisitsPage = ({ user, setUser }) => {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleViewVisit(visit.id)}
-                        data-testid={`view-visit-${visit.id}`}
-                      >
-                        <Eye size={16} className="text-gray-600" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleViewVisit(visit.id)}
+                          data-testid={`view-visit-${visit.id}`}
+                        >
+                          <Eye size={16} className="text-gray-600" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDelete(visit.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
