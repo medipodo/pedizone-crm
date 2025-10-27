@@ -78,7 +78,11 @@ const Dashboard = ({ user, setUser }) => {
           {/* Total Sales */}
           {stats && (
             <>
-              <div className="stat-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm" data-testid="stat-total-sales">
+              <div 
+                onClick={() => navigate('/sales')}
+                className="stat-card bg-white rounded-2xl p-6 border border-gray-100 shadow-sm cursor-pointer hover:shadow-lg transition-all hover:border-[#E50019]" 
+                data-testid="stat-total-sales"
+              >
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
                     <TrendingUp className="text-[#E50019]" size={24} />
@@ -86,9 +90,9 @@ const Dashboard = ({ user, setUser }) => {
                   <span className="text-2xl font-bold text-gray-900">{stats.total_sales || 0}</span>
                 </div>
                 <h3 className="text-gray-600 font-medium">Toplam Satış</h3>
-                {stats.total_sales_amount !== undefined && (
+                {stats.total_revenue !== undefined && (
                   <p className="text-sm text-gray-500 mt-2">
-                    {stats.total_sales_amount.toLocaleString('tr-TR')} ₺
+                    {stats.total_revenue.toLocaleString('tr-TR')} ₺
                   </p>
                 )}
               </div>
