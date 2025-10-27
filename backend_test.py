@@ -266,35 +266,36 @@ class PediZoneAPITester:
         return True
     
     def run_all_tests(self):
-        """Run all tests in sequence"""
-        self.log(f"Starting PediZone CRM API Tests")
+        """Run all tests in sequence - Focus on Dashboard and Visits API"""
+        self.log(f"Starting PediZone CRM API Tests - Review Request Focus")
         self.log(f"Backend URL: {self.base_url}")
+        self.log(f"Test Credentials: admin/admin123")
         
         results = {
-            "login": False,
-            "product_creation": False,
-            "customer_creation": False,
-            "visit_creation": False,
-            "sales_creation": False
+            "login_auth": False,
+            "dashboard_alias": False,
+            "dashboard_stats": False,
+            "visits_api": False,
+            "data_consistency": False
         }
         
-        # Test 1: Login
-        results["login"] = self.test_login()
-        if not results["login"]:
+        # Test 1: Login & Auth
+        results["login_auth"] = self.test_login()
+        if not results["login_auth"]:
             self.log("❌ Cannot continue without authentication", "ERROR")
             return results
         
-        # Test 2: Product Creation
-        results["product_creation"] = self.test_product_creation()
+        # Test 2: Dashboard Alias Endpoint (NEW)
+        results["dashboard_alias"] = self.test_dashboard_alias()
         
-        # Test 3: Customer Creation
-        results["customer_creation"] = self.test_customer_creation()
+        # Test 3: Dashboard Stats Endpoint (existing)
+        results["dashboard_stats"] = self.test_dashboard_stats()
         
-        # Test 4: Visit Creation (depends on customer)
-        results["visit_creation"] = self.test_visit_creation()
+        # Test 4: Visits API with location data
+        results["visits_api"] = self.test_visits_api()
         
-        # Test 5: Sales Creation (depends on product and customer)
-        results["sales_creation"] = self.test_sales_creation()
+        # Test 5: Data Consistency Validation
+        results["data_consistency"] = self.validate_dashboard_data_consistency()
         
         # Summary
         self.log("=== TEST SUMMARY ===")
@@ -306,6 +307,13 @@ class PediZoneAPITester:
             self.log(f"{test_name.replace('_', ' ').title()}: {status}")
         
         self.log(f"Overall: {passed}/{total} tests passed")
+        
+        # Specific focus areas from review request
+        self.log("=== REVIEW REQUEST FOCUS AREAS ===")
+        self.log(f"✅ Login & Auth: {'WORKING' if results['login_auth'] else 'FAILED'}")
+        self.log(f"✅ Dashboard Alias (/api/dashboard): {'WORKING' if results['dashboard_alias'] else 'FAILED'}")
+        self.log(f"✅ Dashboard Stats (/api/dashboard/stats): {'WORKING' if results['dashboard_stats'] else 'FAILED'}")
+        self.log(f"✅ Visits API with location data: {'WORKING' if results['visits_api'] else 'FAILED'}")
         
         return results
 
