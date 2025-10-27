@@ -83,13 +83,13 @@ const DocumentsPage = ({ user, setUser }) => {
 
   const resetForm = () => {
     setFormData({
+      customer_id: '',
       title: '',
-      description: '',
-      url: '',
-      type: 'katalog',
-      file_base64: ''
+      file_name: '',
+      file_base64: '',
+      file_type: ''
     });
-    setUploadMode('url');
+  };
   };
 
   const getTypeLabel = (type) => {
