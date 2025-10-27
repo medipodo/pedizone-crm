@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timezone
 
 # Get backend URL from frontend .env
-BACKEND_URL = "https://crm-deploy-2.preview.emergentagent.com/api"
+BACKEND_URL = "https://crm-pedizone.preview.emergentagent.com/api"
 
 class PediZoneAPITester:
     def __init__(self):
