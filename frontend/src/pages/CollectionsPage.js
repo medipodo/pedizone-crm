@@ -228,6 +228,7 @@ const CollectionsPage = ({ user, setUser }) => {
                   )}
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ödeme Yöntemi</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Tutar</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -245,6 +246,16 @@ const CollectionsPage = ({ user, setUser }) => {
                     </td>
                     <td className="px-6 py-4 text-right text-sm font-semibold text-green-600">
                       {collection.amount.toLocaleString('tr-TR')} ₺
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(collection.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 size={16} />
+                      </Button>
                     </td>
                   </tr>
                 ))}
