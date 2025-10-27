@@ -380,6 +380,82 @@ frontend:
           - No visual issues with menu layout
           - Professional appearance confirmed
 
+  - task: "Dashboard Modal Z-Index Fix"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/Dashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Fixed modal z-index issue:
+          - Increased modal z-index from z-50 to z-[9999]
+          - Modal now appears above map instead of behind it
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ TESTED: Modal Z-Index Issue FIXED
+          - User Issue: "Performans göstergelerine basınca harita hala önde duruyor"
+          - Modal "Performans Sistemi Hakkında" opens correctly when clicking "Performans Göstergeleri 👆 Tıklayın"
+          - Modal appears ABOVE the map with proper z-index (z-[9999])
+          - Modal content fully visible and accessible, not hidden behind map
+          - Close functionality working (X button and ESC key)
+          - Screenshots confirm visual fix working correctly
+
+  - task: "Visit Map Display"
+    implemented: true
+    working: true
+    file: "frontend/src/components/VisitMap.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Map markers should display visits with coordinates from backend
+          - Backend confirmed to have 4 visits with valid coordinates
+          - Map component uses Leaflet with CircleMarker for visit locations
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ TESTED: Visit Map Markers WORKING PERFECTLY
+          - User Issue: "haritada ziyaretlerin gözükmesi lazım koordinatlı eklendi ancak yok"
+          - Map displays colored markers correctly for all visits with coordinates
+          - Filter buttons working: Tümü (4), Görüşüldü (2), Anlaşıldı (2), Randevu Alındı (0)
+          - Markers are color-coded: Green (Görüşüldü), Red (Anlaşıldı), Blue (Randevu Alındı)
+          - Leaflet map container loaded successfully with interactive markers
+          - Visit data properly retrieved from backend API
+
+  - task: "Calendar Visit Display"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/CalendarPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Fixed calendar date comparison logic:
+          - Updated date matching to handle ISO format dates from backend
+          - Calendar should highlight dates with visits in red
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ TESTED: Calendar Visits Display WORKING
+          - User Issue: "takvimde de gözüksün planlanan ve yapılan ziyaretler"
+          - Calendar shows visits with red highlighted dates
+          - Calendar page loads correctly with "Ziyaret Takvimi" title
+          - Dates 23, 24, 25 October highlighted in red (indicating visits)
+          - Date selection working - clicking dates shows visit details in sidebar
+          - "Yaklaşan Ziyaretler" section present and functional
+          - ISO date format handling working correctly
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
