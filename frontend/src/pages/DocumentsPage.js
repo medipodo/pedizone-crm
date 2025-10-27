@@ -90,7 +90,6 @@ const DocumentsPage = ({ user, setUser }) => {
       file_type: ''
     });
   };
-  };
 
   const getTypeLabel = (type) => {
     const labels = {
