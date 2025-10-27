@@ -44,7 +44,10 @@ const CalendarPage = ({ user, setUser }) => {
   const getVisitsForDate = (selectedDate) => {
     if (!selectedDate) return [];
     const dateStr = selectedDate.toISOString().split('T')[0];
-    return visits.filter(visit => visit.visit_date === dateStr);
+    return visits.filter(visit => {
+      const visitDate = visit.visit_date.split('T')[0];
+      return visitDate === dateStr;
+    });
   };
 
   const selectedDateVisits = getVisitsForDate(date);
