@@ -238,6 +238,72 @@ const Dashboard = ({ user, setUser }) => {
           </div>
         )}
 
+        {/* Performance Modal */}
+        {showPerformanceModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPerformanceModal(false)}>
+            <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Performans Sistemi Hakkında</h2>
+                <button onClick={() => setShowPerformanceModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-red-50 to-white p-6 rounded-xl">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">📊 Son 1 Ay İstatistikleri</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white p-4 rounded-lg border border-gray-100">
+                      <p className="text-sm text-gray-600">Toplam Satış</p>
+                      <p className="text-2xl font-bold text-[#E50019]">{stats?.total_sales || 0}</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg border border-gray-100">
+                      <p className="text-sm text-gray-600">Toplam Ziyaret</p>
+                      <p className="text-2xl font-bold text-[#E50019]">{stats?.total_visits || 0}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">🎯 Motivasyon & Hedefler</h3>
+                  <div className="space-y-3 text-gray-700">
+                    <p className="flex items-start gap-2">
+                      <span className="text-lg">✨</span>
+                      <span><strong>Sürekli İyileştirme:</strong> Her gün önceki günden daha iyisin! Sistemimiz performansınızı takip ediyor.</span>
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="text-lg">🎁</span>
+                      <span><strong>Ödül Sistemi:</strong> Başarılı satışlarınız için prim kazanıyorsunuz. Ne kadar çok satarsanız, o kadar çok kazanırsınız!</span>
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="text-lg">📈</span>
+                      <span><strong>Seviye Atlama:</strong> Başlangıç → Güçlü → Lider → Şampiyon! Hangi seviyedesiniz?</span>
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="text-lg">🏆</span>
+                      <span><strong>Takım Ruhu:</strong> Bireysel başarınız, takımın başarısıdır. Beraber büyüyoruz!</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-[#E50019] to-[#c00015] text-white p-6 rounded-xl">
+                  <h3 className="text-lg font-bold mb-2">💪 Bu Ay Hedefiniz</h3>
+                  <p className="text-3xl font-bold mb-2">
+                    {stats?.monthly_sales_amount?.toLocaleString('tr-TR') || '0'} ₺
+                  </p>
+                  <p className="text-sm opacity-90">Harikasınız! Devam edin! 🚀</p>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-sm text-gray-500 italic">
+                    "Başarı, küçük çabaların günlük tekrarıdır." - Robert Collier
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Visit Map */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Ziyaret Haritası</h2>
