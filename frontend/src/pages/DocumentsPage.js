@@ -40,32 +40,44 @@ const DocumentsPage = ({ user, setUser }) => {
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('Dosya boyutu 10MB\'dan küçük olmalı');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, file_base64: reader.result, url: `uploaded_${file.name}` });
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Dosya boyutu 10MB\'dan küçük olmalı');
+      return;
     }
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result.split(',')[1]; // Get only base64 part
+      setFormData({ 
+        ...formData, 
+        file_base64: base64String,
+        file_name: file.name,
+        file_type: file.type
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const submitData = uploadMode === 'upload' 
-        ? { ...formData, url: formData.file_base64 || formData.url }
-        : formData;
-      await axiosInstance.post('/documents', submitData);
+      const data = {
+        customer_id: formData.customer_id,
+        title: formData.title,
+        file_name: formData.file_name,
+        file_base64: formData.file_base64,
+        file_type: formData.file_type
+      };
+      await axiosInstance.post('/documents', data);
       toast.success('Doküman eklendi');
       setDialogOpen(false);
       resetForm();
       fetchDocuments();
     } catch (error) {
-      toast.error('İşlem başarısız');
+      console.error('Doküman yükleme hatası:', error);
+      toast.error(error.response?.data?.detail || 'İşlem başarısız');
     }
   };
 
