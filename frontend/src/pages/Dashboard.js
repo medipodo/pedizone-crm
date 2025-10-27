@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PageHeader from '@/components/PageHeader';
 import { axiosInstance } from '@/App';
 import { toast } from 'sonner';
-import { TrendingUp, Users as UsersIcon, FileText, Wallet, Target } from 'lucide-react';
+import { TrendingUp, Users as UsersIcon, FileText, Wallet, Target, X } from 'lucide-react';
 import VisitMap from '@/components/VisitMap';
 
 const Dashboard = ({ user, setUser }) => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [visits, setVisits] = useState([]);
   const [sales, setSales] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [showPerformanceModal, setShowPerformanceModal] = useState(false);
 
   useEffect(() => {
     fetchStats();
