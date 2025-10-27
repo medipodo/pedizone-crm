@@ -178,11 +178,15 @@ const Dashboard = ({ user, setUser }) => {
           )}
         </div>
 
-        {/* Performance Info */}
+        {/* Performance Info - Now Clickable */}
         {stats && (
-          <div className="bg-gradient-to-r from-white to-red-50 rounded-2xl p-8 border border-gray-100" data-testid="performance-info">
+          <div 
+            onClick={() => setShowPerformanceModal(true)}
+            className="bg-gradient-to-r from-white to-red-50 rounded-2xl p-8 border border-gray-100 cursor-pointer hover:shadow-lg transition-all" 
+            data-testid="performance-info"
+          >
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {user.role === 'salesperson' ? 'Prim Durumu' : 'Performans Göstergeleri'}
+              {user.role === 'salesperson' ? 'Prim Durumu' : 'Performans Göstergeleri'} 👆 Tıklayın
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="text-center p-4 bg-white rounded-xl border border-gray-100">
