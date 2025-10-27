@@ -74,6 +74,17 @@ const CollectionsPage = ({ user, setUser }) => {
     }
   };
 
+  const handleDelete = async (collectionId) => {
+    if (!window.confirm('Bu tahsilatı silmek istediğinizden emin misiniz?')) return;
+    try {
+      await axiosInstance.delete(`/collections/${collectionId}`);
+      toast.success('Tahsilat silindi');
+      fetchCollections();
+    } catch (error) {
+      toast.error('Silme işlemi başarısız');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       customer_id: '',
