@@ -400,11 +400,13 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     async with pool.acquire() as conn:
         total_customers = await conn.fetchval('SELECT COUNT(*) FROM customers')
         total_sales = await conn.fetchval('SELECT COUNT(*) FROM sales')
+        total_visits = await conn.fetchval('SELECT COUNT(*) FROM visits')
         total_revenue = await conn.fetchval('SELECT COALESCE(SUM(total_amount), 0) FROM sales')
         
         return {
             "total_customers": total_customers or 0,
             "total_sales": total_sales or 0,
+            "total_visits": total_visits or 0,
             "total_revenue": float(total_revenue or 0),
             "active_users": 1
         }
