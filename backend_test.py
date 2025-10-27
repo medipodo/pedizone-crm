@@ -55,8 +55,8 @@ class PediZoneAPITester:
             return None
     
     def test_login(self):
-        """Test 1: Login to get JWT token"""
-        self.log("=== Testing Login ===")
+        """Test 1: Login & Auth - POST /api/auth/login"""
+        self.log("=== Testing Login & Auth ===")
         
         login_data = {
             "username": "admin",
@@ -72,11 +72,15 @@ class PediZoneAPITester:
         if response.status_code == 200:
             data = response.json()
             self.token = data.get("access_token")
-            if self.token:
-                self.log("✅ Login successful - token obtained")
+            user_info = data.get("user")
+            
+            if self.token and user_info:
+                self.log("✅ Login successful - JWT token obtained")
+                self.log(f"   User: {user_info.get('full_name', 'Unknown')}")
+                self.log(f"   Role: {user_info.get('role', 'Unknown')}")
                 return True
             else:
-                self.log("❌ Login response missing token", "ERROR")
+                self.log("❌ Login response missing token or user info", "ERROR")
                 return False
         else:
             self.log(f"❌ Login failed with status {response.status_code}: {response.text}", "ERROR")
