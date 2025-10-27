@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 PediZone CRM Backend API Testing
-Tests all module addition endpoints that were failing
+Focus on Dashboard endpoints and Visits API as per review request
 """
 
 import requests
@@ -9,7 +9,7 @@ import json
 import sys
 from datetime import datetime, timezone
 
-# Get backend URL from frontend .env
+# Backend URL as specified in review request
 BACKEND_URL = "https://crm-pedizone.preview.emergentagent.com/api"
 
 class PediZoneAPITester:
