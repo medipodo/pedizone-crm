@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-PediZone CRM Backend API Testing
-Focus on Dashboard endpoints and Visits API as per review request
+PediZone CRM Backend API Testing - Role-Based Filtering for Salesperson
+Testing plasiyer (salesperson) role-based filtering to verify data isolation
 """
 
 import requests
@@ -12,11 +12,12 @@ from datetime import datetime, timezone
 # Backend URL as specified in review request
 BACKEND_URL = "https://crm-pedizone.preview.emergentagent.com/api"
 
-class PediZoneAPITester:
+class PediZoneRoleBasedTester:
     def __init__(self):
         self.base_url = BACKEND_URL
         self.token = None
         self.headers = {"Content-Type": "application/json"}
+        self.user_info = {}
         self.test_data = {}
         
     def log(self, message, level="INFO"):
@@ -54,36 +55,42 @@ class PediZoneAPITester:
             self.log(f"Request failed: {str(e)}", "ERROR")
             return None
     
-    def test_login(self):
-        """Test 1: Login & Auth - POST /api/auth/login"""
-        self.log("=== Testing Login & Auth ===")
+    def test_plasiyer_login(self):
+        """Test 1: Login as Plasiyer (Salesperson) - POST /api/auth/login"""
+        self.log("=== Testing Plasiyer Login ===")
         
         login_data = {
-            "username": "admin",
-            "password": "admin123"
+            "username": "testuser",
+            "password": "123456"
         }
         
         response = self.make_request("POST", "/auth/login", login_data, auth_required=False)
         
         if not response:
-            self.log("Login request failed - no response", "ERROR")
+            self.log("❌ Login request failed - no response", "ERROR")
             return False
             
         if response.status_code == 200:
             data = response.json()
             self.token = data.get("access_token")
-            user_info = data.get("user")
+            self.user_info = data.get("user", {})
             
-            if self.token and user_info:
-                self.log("✅ Login successful - JWT token obtained")
-                self.log(f"   User: {user_info.get('full_name', 'Unknown')}")
-                self.log(f"   Role: {user_info.get('role', 'Unknown')}")
-                return True
+            if self.token and self.user_info:
+                role = self.user_info.get("role")
+                if role == "salesperson":
+                    self.log("✅ Plasiyer login successful - JWT token obtained")
+                    self.log(f"   User: {self.user_info.get('full_name', 'Unknown')}")
+                    self.log(f"   Role: {role}")
+                    self.log(f"   User ID: {self.user_info.get('id')}")
+                    return True
+                else:
+                    self.log(f"❌ Expected role 'salesperson', got '{role}'", "ERROR")
+                    return False
             else:
                 self.log("❌ Login response missing token or user info", "ERROR")
                 return False
         else:
-            self.log(f"❌ Login failed with status {response.status_code}: {response.text}", "ERROR")
+            self.log(f"❌ Plasiyer login failed with status {response.status_code}: {response.text}", "ERROR")
             return False
     
     def test_dashboard_alias(self):
