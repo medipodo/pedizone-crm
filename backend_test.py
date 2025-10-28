@@ -61,7 +61,7 @@ class PediZoneRoleBasedTester:
         
         login_data = {
             "username": "testuser",
-            "password": "123456"
+            "password": "test123"
         }
         
         response = self.make_request("POST", "/auth/login", login_data, auth_required=False)
