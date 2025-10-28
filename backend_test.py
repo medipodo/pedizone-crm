@@ -302,36 +302,93 @@ class PediZoneRoleBasedTester:
             self.log(f"❌ Collections API failed with status {response.status_code}: {response.text}", "ERROR")
             return False
     
-    def validate_dashboard_data_consistency(self):
-        """Test 5: Validate Dashboard Data Consistency"""
-        self.log("=== Validating Dashboard Data Consistency ===")
+    def test_plasiyer_commission_data(self):
+        """Test 6: Commission Data - GET /api/sales/commission"""
+        self.log("=== Testing Plasiyer Commission Data ===")
         
-        if "dashboard_alias" not in self.test_data:
-            self.log("❌ Cannot validate consistency - dashboard alias data not available", "ERROR")
+        response = self.make_request("GET", "/sales/commission")
+        
+        if not response:
+            self.log("❌ Commission API request failed - no response", "ERROR")
             return False
-        
-        dashboard_data = self.test_data["dashboard_alias"]
-        
-        # Check that all expected fields are present and have reasonable values
-        required_fields = ["total_sales", "total_visits"]
-        
-        for field in required_fields:
-            if field not in dashboard_data:
-                self.log(f"❌ Dashboard missing required field: {field}", "ERROR")
+            
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Check for expected commission fields
+            expected_fields = ["monthly_total", "emoji", "level", "sales_count"]
+            missing_fields = [field for field in expected_fields if field not in data]
+            
+            if missing_fields:
+                self.log(f"❌ Commission data missing fields: {missing_fields}", "ERROR")
                 return False
             
-            value = dashboard_data[field]
-            if not isinstance(value, (int, float)) or value < 0:
-                self.log(f"❌ Dashboard field {field} has invalid value: {value}", "ERROR")
+            self.log("✅ Commission data endpoint working")
+            self.log(f"   Monthly Total: {data.get('monthly_total', 0)}")
+            self.log(f"   Commission Emoji: {data.get('emoji', 'N/A')}")
+            self.log(f"   Commission Level: {data.get('level', 'N/A')}")
+            self.log(f"   Sales Count: {data.get('sales_count', 0)}")
+            
+            # Validate emoji is one of expected values
+            expected_emojis = ["🌱", "💪", "🔥", "🏆"]
+            emoji = data.get("emoji")
+            if emoji not in expected_emojis:
+                self.log(f"❌ Unexpected commission emoji: {emoji}", "ERROR")
                 return False
+            
+            self.test_data["commission"] = data
+            return True
+        else:
+            self.log(f"❌ Commission API failed with status {response.status_code}: {response.text}", "ERROR")
+            return False
+    
+    def validate_data_consistency(self):
+        """Test 7: Validate Data Consistency Across Endpoints"""
+        self.log("=== Validating Data Consistency ===")
         
-        self.log("✅ Dashboard data consistency validated")
-        self.log(f"   All required fields present with valid values")
+        dashboard_data = self.test_data.get("dashboard_stats", {})
+        sales_data = self.test_data.get("sales", [])
+        visits_data = self.test_data.get("visits", [])
+        collections_data = self.test_data.get("collections", [])
+        commission_data = self.test_data.get("commission", {})
         
-        # Check for additional fields that might be role-specific
-        additional_fields = [k for k in dashboard_data.keys() if k not in required_fields]
-        if additional_fields:
-            self.log(f"   Additional fields found: {additional_fields}")
+        # Validate sales count consistency
+        dashboard_sales_count = dashboard_data.get("total_sales", 0)
+        actual_sales_count = len(sales_data)
+        
+        if dashboard_sales_count != actual_sales_count:
+            self.log(f"❌ Sales count mismatch: dashboard={dashboard_sales_count}, actual={actual_sales_count}", "ERROR")
+            return False
+        
+        # Validate visits count consistency
+        dashboard_visits_count = dashboard_data.get("total_visits", 0)
+        actual_visits_count = len(visits_data)
+        
+        if dashboard_visits_count != actual_visits_count:
+            self.log(f"❌ Visits count mismatch: dashboard={dashboard_visits_count}, actual={actual_visits_count}", "ERROR")
+            return False
+        
+        # Validate sales amount consistency
+        dashboard_sales_amount = dashboard_data.get("total_sales_amount", 0)
+        calculated_sales_amount = sum([sale.get("total_amount", 0) for sale in sales_data])
+        
+        if abs(dashboard_sales_amount - calculated_sales_amount) > 0.01:  # Allow for floating point precision
+            self.log(f"❌ Sales amount mismatch: dashboard={dashboard_sales_amount}, calculated={calculated_sales_amount}", "ERROR")
+            return False
+        
+        # Validate collections amount consistency
+        dashboard_collections_amount = dashboard_data.get("total_collections", 0)
+        calculated_collections_amount = sum([collection.get("amount", 0) for collection in collections_data])
+        
+        if abs(dashboard_collections_amount - calculated_collections_amount) > 0.01:
+            self.log(f"❌ Collections amount mismatch: dashboard={dashboard_collections_amount}, calculated={calculated_collections_amount}", "ERROR")
+            return False
+        
+        self.log("✅ Data consistency validated across all endpoints")
+        self.log(f"   Sales count: {actual_sales_count}")
+        self.log(f"   Visits count: {actual_visits_count}")
+        self.log(f"   Sales amount: {calculated_sales_amount}")
+        self.log(f"   Collections amount: {calculated_collections_amount}")
         
         return True
     
