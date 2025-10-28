@@ -93,74 +93,45 @@ class PediZoneRoleBasedTester:
             self.log(f"❌ Plasiyer login failed with status {response.status_code}: {response.text}", "ERROR")
             return False
     
-    def test_dashboard_alias(self):
-        """Test 2: Dashboard Alias Endpoint - GET /api/dashboard"""
-        self.log("=== Testing Dashboard Alias Endpoint ===")
-        
-        response = self.make_request("GET", "/dashboard")
-        
-        if not response:
-            self.log("Dashboard alias request failed - no response", "ERROR")
-            return False
-            
-        if response.status_code == 200:
-            data = response.json()
-            
-            # Check for expected dashboard fields
-            expected_fields = ["total_sales", "total_visits"]
-            missing_fields = [field for field in expected_fields if field not in data]
-            
-            if missing_fields:
-                self.log(f"❌ Dashboard alias missing fields: {missing_fields}", "ERROR")
-                return False
-            
-            self.log("✅ Dashboard alias endpoint working")
-            self.log(f"   Total Sales: {data.get('total_sales', 0)}")
-            self.log(f"   Total Visits: {data.get('total_visits', 0)}")
-            
-            # Store data for comparison with stats endpoint
-            self.test_data["dashboard_alias"] = data
-            return True
-        else:
-            self.log(f"❌ Dashboard alias failed with status {response.status_code}: {response.text}", "ERROR")
-            return False
-    
-    def test_dashboard_stats(self):
-        """Test 3: Dashboard Stats Endpoint - GET /api/dashboard/stats"""
-        self.log("=== Testing Dashboard Stats Endpoint ===")
+    def test_plasiyer_dashboard_stats(self):
+        """Test 2: Dashboard Stats (Personal) - GET /api/dashboard/stats"""
+        self.log("=== Testing Plasiyer Dashboard Stats (Personal Only) ===")
         
         response = self.make_request("GET", "/dashboard/stats")
         
         if not response:
-            self.log("Dashboard stats request failed - no response", "ERROR")
+            self.log("❌ Dashboard stats request failed - no response", "ERROR")
             return False
             
         if response.status_code == 200:
             data = response.json()
             
-            # Check for expected dashboard fields
-            expected_fields = ["total_sales", "total_visits"]
+            # Check for expected plasiyer dashboard fields
+            expected_fields = ["total_sales", "total_sales_amount", "total_visits", "total_collections", "monthly_sales_amount", "commission_emoji"]
             missing_fields = [field for field in expected_fields if field not in data]
             
             if missing_fields:
-                self.log(f"❌ Dashboard stats missing fields: {missing_fields}", "ERROR")
+                self.log(f"❌ Dashboard stats missing expected plasiyer fields: {missing_fields}", "ERROR")
                 return False
             
-            self.log("✅ Dashboard stats endpoint working")
-            self.log(f"   Total Sales: {data.get('total_sales', 0)}")
-            self.log(f"   Total Visits: {data.get('total_visits', 0)}")
+            # Check that admin-only fields are NOT present
+            admin_only_fields = ["team_size", "total_customers"]
+            present_admin_fields = [field for field in admin_only_fields if field in data]
             
-            # Compare with alias endpoint data
-            if "dashboard_alias" in self.test_data:
-                alias_data = self.test_data["dashboard_alias"]
-                if data == alias_data:
-                    self.log("✅ Dashboard alias and stats return identical data")
-                else:
-                    self.log("❌ Dashboard alias and stats return different data", "ERROR")
-                    self.log(f"   Alias: {alias_data}")
-                    self.log(f"   Stats: {data}")
-                    return False
+            if present_admin_fields:
+                self.log(f"❌ Dashboard contains admin-only fields for plasiyer: {present_admin_fields}", "ERROR")
+                return False
             
+            self.log("✅ Plasiyer dashboard stats working correctly")
+            self.log(f"   Personal Total Sales: {data.get('total_sales', 0)}")
+            self.log(f"   Personal Total Sales Amount: {data.get('total_sales_amount', 0)}")
+            self.log(f"   Personal Total Visits: {data.get('total_visits', 0)}")
+            self.log(f"   Personal Total Collections: {data.get('total_collections', 0)}")
+            self.log(f"   Monthly Sales Amount: {data.get('monthly_sales_amount', 0)}")
+            self.log(f"   Commission Emoji: {data.get('commission_emoji', 'N/A')}")
+            
+            # Store data for validation
+            self.test_data["dashboard_stats"] = data
             return True
         else:
             self.log(f"❌ Dashboard stats failed with status {response.status_code}: {response.text}", "ERROR")
