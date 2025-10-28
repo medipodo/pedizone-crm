@@ -90,8 +90,8 @@ def verify_data_isolation(testuser_data, admin_data):
     testuser_dashboard = testuser_data["dashboard"]
     admin_dashboard = admin_data["dashboard"]
     
-    # Admin should have fields that testuser doesn't
-    admin_only_fields = ["total_customers", "team_size"]
+    # Admin should have fields that testuser doesn't (admin sees system-wide data)
+    admin_only_fields = ["total_customers"]  # team_size is only for regional_manager role
     testuser_only_fields = ["commission_emoji"]
     
     for field in admin_only_fields:
