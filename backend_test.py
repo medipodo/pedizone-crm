@@ -137,14 +137,14 @@ class PediZoneRoleBasedTester:
             self.log(f"❌ Dashboard stats failed with status {response.status_code}: {response.text}", "ERROR")
             return False
     
-    def test_visits_api(self):
-        """Test 4: Visits API - GET /api/visits"""
-        self.log("=== Testing Visits API ===")
+    def test_plasiyer_visits_list(self):
+        """Test 3: Visits List (Personal Only) - GET /api/visits"""
+        self.log("=== Testing Plasiyer Visits List (Personal Only) ===")
         
         response = self.make_request("GET", "/visits")
         
         if not response:
-            self.log("Visits API request failed - no response", "ERROR")
+            self.log("❌ Visits API request failed - no response", "ERROR")
             return False
             
         if response.status_code == 200:
@@ -156,58 +156,150 @@ class PediZoneRoleBasedTester:
             
             self.log(f"✅ Visits API working - returned {len(data)} visits")
             
-            # Check visit data structure if visits exist
-            if len(data) > 0:
-                visit = data[0]
-                
-                # Check for location object
-                if "location" not in visit:
-                    self.log("❌ Visit missing location field", "ERROR")
-                    return False
-                
-                location = visit.get("location")
-                if location and isinstance(location, dict):
-                    if "latitude" in location and "longitude" in location:
-                        self.log("✅ Visit has location with latitude/longitude")
-                        self.log(f"   Sample location: {location}")
-                    else:
-                        self.log("❌ Location object missing latitude/longitude", "ERROR")
-                        return False
-                
-                # Check visit_date format
-                if "visit_date" not in visit:
-                    self.log("❌ Visit missing visit_date field", "ERROR")
-                    return False
-                
-                visit_date = visit.get("visit_date")
-                if visit_date:
-                    self.log(f"✅ Visit has visit_date: {visit_date}")
-                    # Check if it's in ISO format (basic validation)
-                    if "T" in visit_date or "-" in visit_date:
-                        self.log("✅ Visit date appears to be in ISO format")
-                    else:
-                        self.log("❌ Visit date not in expected ISO format", "ERROR")
-                        return False
-                
-                # Check status field
-                if "status" not in visit:
-                    self.log("❌ Visit missing status field", "ERROR")
-                    return False
-                
-                status = visit.get("status")
-                expected_statuses = ["gorusuldu", "anlasildi", "randevu_alindi"]
-                if status in expected_statuses:
-                    self.log(f"✅ Visit has valid status: {status}")
-                else:
-                    self.log(f"❌ Visit has unexpected status: {status}", "ERROR")
-                    return False
-                
-            else:
-                self.log("ℹ️ No visits found in database - structure validation skipped")
+            # Verify all visits belong to current plasiyer
+            user_id = self.user_info.get("id")
+            if not user_id:
+                self.log("❌ Cannot verify visit ownership - user ID not available", "ERROR")
+                return False
             
+            for i, visit in enumerate(data):
+                visit_salesperson_id = visit.get("salesperson_id")
+                if visit_salesperson_id != user_id:
+                    self.log(f"❌ Visit {i+1} belongs to different salesperson: {visit_salesperson_id} (expected: {user_id})", "ERROR")
+                    return False
+            
+            if len(data) > 0:
+                self.log(f"✅ All {len(data)} visits belong to current plasiyer (ID: {user_id})")
+                
+                # Check visit data structure
+                visit = data[0]
+                required_fields = ["id", "customer_id", "salesperson_id", "visit_date", "status"]
+                missing_fields = [field for field in required_fields if field not in visit]
+                
+                if missing_fields:
+                    self.log(f"❌ Visit missing required fields: {missing_fields}", "ERROR")
+                    return False
+                
+                self.log("✅ Visit data structure validated")
+                self.log(f"   Sample visit ID: {visit.get('id')}")
+                self.log(f"   Visit status: {visit.get('status')}")
+            else:
+                self.log("ℹ️ No visits found for this plasiyer")
+            
+            self.test_data["visits"] = data
             return True
         else:
             self.log(f"❌ Visits API failed with status {response.status_code}: {response.text}", "ERROR")
+            return False
+    
+    def test_plasiyer_sales_list(self):
+        """Test 4: Sales List (Personal Only) - GET /api/sales"""
+        self.log("=== Testing Plasiyer Sales List (Personal Only) ===")
+        
+        response = self.make_request("GET", "/sales")
+        
+        if not response:
+            self.log("❌ Sales API request failed - no response", "ERROR")
+            return False
+            
+        if response.status_code == 200:
+            data = response.json()
+            
+            if not isinstance(data, list):
+                self.log("❌ Sales API should return a list", "ERROR")
+                return False
+            
+            self.log(f"✅ Sales API working - returned {len(data)} sales")
+            
+            # Verify all sales belong to current plasiyer
+            user_id = self.user_info.get("id")
+            if not user_id:
+                self.log("❌ Cannot verify sale ownership - user ID not available", "ERROR")
+                return False
+            
+            for i, sale in enumerate(data):
+                sale_salesperson_id = sale.get("salesperson_id")
+                if sale_salesperson_id != user_id:
+                    self.log(f"❌ Sale {i+1} belongs to different salesperson: {sale_salesperson_id} (expected: {user_id})", "ERROR")
+                    return False
+            
+            if len(data) > 0:
+                self.log(f"✅ All {len(data)} sales belong to current plasiyer (ID: {user_id})")
+                
+                # Check sale data structure
+                sale = data[0]
+                required_fields = ["id", "customer_id", "salesperson_id", "sale_date", "total_amount", "items"]
+                missing_fields = [field for field in required_fields if field not in sale]
+                
+                if missing_fields:
+                    self.log(f"❌ Sale missing required fields: {missing_fields}", "ERROR")
+                    return False
+                
+                self.log("✅ Sale data structure validated")
+                self.log(f"   Sample sale ID: {sale.get('id')}")
+                self.log(f"   Sale total amount: {sale.get('total_amount')}")
+            else:
+                self.log("ℹ️ No sales found for this plasiyer")
+            
+            self.test_data["sales"] = data
+            return True
+        else:
+            self.log(f"❌ Sales API failed with status {response.status_code}: {response.text}", "ERROR")
+            return False
+    
+    def test_plasiyer_collections_list(self):
+        """Test 5: Collections List (Personal Only) - GET /api/collections"""
+        self.log("=== Testing Plasiyer Collections List (Personal Only) ===")
+        
+        response = self.make_request("GET", "/collections")
+        
+        if not response:
+            self.log("❌ Collections API request failed - no response", "ERROR")
+            return False
+            
+        if response.status_code == 200:
+            data = response.json()
+            
+            if not isinstance(data, list):
+                self.log("❌ Collections API should return a list", "ERROR")
+                return False
+            
+            self.log(f"✅ Collections API working - returned {len(data)} collections")
+            
+            # Verify all collections belong to current plasiyer
+            user_id = self.user_info.get("id")
+            if not user_id:
+                self.log("❌ Cannot verify collection ownership - user ID not available", "ERROR")
+                return False
+            
+            for i, collection in enumerate(data):
+                collection_salesperson_id = collection.get("salesperson_id")
+                if collection_salesperson_id != user_id:
+                    self.log(f"❌ Collection {i+1} belongs to different salesperson: {collection_salesperson_id} (expected: {user_id})", "ERROR")
+                    return False
+            
+            if len(data) > 0:
+                self.log(f"✅ All {len(data)} collections belong to current plasiyer (ID: {user_id})")
+                
+                # Check collection data structure
+                collection = data[0]
+                required_fields = ["id", "customer_id", "salesperson_id", "amount", "collection_date", "payment_method"]
+                missing_fields = [field for field in required_fields if field not in collection]
+                
+                if missing_fields:
+                    self.log(f"❌ Collection missing required fields: {missing_fields}", "ERROR")
+                    return False
+                
+                self.log("✅ Collection data structure validated")
+                self.log(f"   Sample collection ID: {collection.get('id')}")
+                self.log(f"   Collection amount: {collection.get('amount')}")
+            else:
+                self.log("ℹ️ No collections found for this plasiyer")
+            
+            self.test_data["collections"] = data
+            return True
+        else:
+            self.log(f"❌ Collections API failed with status {response.status_code}: {response.text}", "ERROR")
             return False
     
     def validate_dashboard_data_consistency(self):
