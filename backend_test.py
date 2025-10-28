@@ -393,36 +393,45 @@ class PediZoneRoleBasedTester:
         return True
     
     def run_all_tests(self):
-        """Run all tests in sequence - Focus on Dashboard and Visits API"""
-        self.log(f"Starting PediZone CRM API Tests - Review Request Focus")
+        """Run all role-based filtering tests for plasiyer (salesperson)"""
+        self.log(f"Starting PediZone CRM Role-Based Filtering Tests")
         self.log(f"Backend URL: {self.base_url}")
-        self.log(f"Test Credentials: admin/admin123")
+        self.log(f"Test Credentials: testuser/123456 (Plasiyer/Salesperson)")
+        self.log(f"Focus: Verify plasiyer only sees their own data")
         
         results = {
-            "login_auth": False,
-            "dashboard_alias": False,
+            "plasiyer_login": False,
             "dashboard_stats": False,
-            "visits_api": False,
+            "visits_list": False,
+            "sales_list": False,
+            "collections_list": False,
+            "commission_data": False,
             "data_consistency": False
         }
         
-        # Test 1: Login & Auth
-        results["login_auth"] = self.test_login()
-        if not results["login_auth"]:
-            self.log("❌ Cannot continue without authentication", "ERROR")
+        # Test 1: Login as Plasiyer
+        results["plasiyer_login"] = self.test_plasiyer_login()
+        if not results["plasiyer_login"]:
+            self.log("❌ Cannot continue without plasiyer authentication", "ERROR")
             return results
         
-        # Test 2: Dashboard Alias Endpoint (NEW)
-        results["dashboard_alias"] = self.test_dashboard_alias()
+        # Test 2: Dashboard Stats (Personal)
+        results["dashboard_stats"] = self.test_plasiyer_dashboard_stats()
         
-        # Test 3: Dashboard Stats Endpoint (existing)
-        results["dashboard_stats"] = self.test_dashboard_stats()
+        # Test 3: Visits List (Personal Only)
+        results["visits_list"] = self.test_plasiyer_visits_list()
         
-        # Test 4: Visits API with location data
-        results["visits_api"] = self.test_visits_api()
+        # Test 4: Sales List (Personal Only)
+        results["sales_list"] = self.test_plasiyer_sales_list()
         
-        # Test 5: Data Consistency Validation
-        results["data_consistency"] = self.validate_dashboard_data_consistency()
+        # Test 5: Collections List (Personal Only)
+        results["collections_list"] = self.test_plasiyer_collections_list()
+        
+        # Test 6: Commission Data
+        results["commission_data"] = self.test_plasiyer_commission_data()
+        
+        # Test 7: Data Consistency Validation
+        results["data_consistency"] = self.validate_data_consistency()
         
         # Summary
         self.log("=== TEST SUMMARY ===")
@@ -435,22 +444,34 @@ class PediZoneRoleBasedTester:
         
         self.log(f"Overall: {passed}/{total} tests passed")
         
-        # Specific focus areas from review request
-        self.log("=== REVIEW REQUEST FOCUS AREAS ===")
-        self.log(f"✅ Login & Auth: {'WORKING' if results['login_auth'] else 'FAILED'}")
-        self.log(f"✅ Dashboard Alias (/api/dashboard): {'WORKING' if results['dashboard_alias'] else 'FAILED'}")
-        self.log(f"✅ Dashboard Stats (/api/dashboard/stats): {'WORKING' if results['dashboard_stats'] else 'FAILED'}")
-        self.log(f"✅ Visits API with location data: {'WORKING' if results['visits_api'] else 'FAILED'}")
+        # Role-based filtering verification
+        self.log("=== ROLE-BASED FILTERING VERIFICATION ===")
+        self.log(f"✅ Plasiyer Login: {'WORKING' if results['plasiyer_login'] else 'FAILED'}")
+        self.log(f"✅ Personal Dashboard Stats: {'WORKING' if results['dashboard_stats'] else 'FAILED'}")
+        self.log(f"✅ Personal Visits Only: {'WORKING' if results['visits_list'] else 'FAILED'}")
+        self.log(f"✅ Personal Sales Only: {'WORKING' if results['sales_list'] else 'FAILED'}")
+        self.log(f"✅ Personal Collections Only: {'WORKING' if results['collections_list'] else 'FAILED'}")
+        self.log(f"✅ Commission Data: {'WORKING' if results['commission_data'] else 'FAILED'}")
+        
+        if all(results.values()):
+            self.log("🎉 ROLE-BASED FILTERING WORKING CORRECTLY")
+            self.log("   Plasiyer can only see their own data")
+            self.log("   No access to other salespeople's data")
+            self.log("   Dashboard shows personal statistics with commission emoji")
+        else:
+            self.log("❌ ROLE-BASED FILTERING HAS ISSUES")
+            failed_tests = [test for test, result in results.items() if not result]
+            self.log(f"   Failed tests: {failed_tests}")
         
         return results
 
 if __name__ == "__main__":
-    tester = PediZoneAPITester()
+    tester = PediZoneRoleBasedTester()
     results = tester.run_all_tests()
     
     # Exit with error code if any test failed
     if not all(results.values()):
         sys.exit(1)
     else:
-        print("\n🎉 All tests passed!")
+        print("\n🎉 All role-based filtering tests passed!")
         sys.exit(0)
