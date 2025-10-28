@@ -264,6 +264,31 @@ backend:
           - POST /api/customers successful with all fields
           - Test customer created: ID 34829fef-f681-4b7a-ba74-27a08dcdcf1c
 
+  - task: "Role-Based Filtering for Salesperson"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ TESTED: Role-based filtering working perfectly for salesperson role
+          - Login with testuser/test123 successful (salesperson role)
+          - Dashboard shows personal stats only: 1 sale (475.0), 1 visit, 1 collection (200.0)
+          - Commission emoji system working: 🌱 (Başlangıç level)
+          - All API endpoints properly filter by salesperson_id:
+            * GET /api/visits - returns only personal visits
+            * GET /api/sales - returns only personal sales  
+            * GET /api/collections - returns only personal collections
+            * GET /api/sales/commission - returns personal commission data
+          - Data isolation verified: plasiyer cannot see other salespeople's data
+          - Dashboard fields are role-specific (no admin fields like total_customers)
+          - Security verification passed: all data belongs to testuser ID only
+          - Comprehensive testing with admin comparison confirms proper isolation
+
 frontend:
   - task: "Product Addition (Ürün Ekle)"
     implemented: true
