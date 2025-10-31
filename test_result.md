@@ -514,7 +514,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Dashboard Modal Z-Index Fix"
+    - "Document Upload API (Base64 & URL)"
     - "Visit Map Display"
     - "Calendar Visit Display"
   stuck_tasks: []
