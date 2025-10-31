@@ -289,6 +289,31 @@ backend:
           - Security verification passed: all data belongs to testuser ID only
           - Comprehensive testing with admin comparison confirms proper isolation
 
+  - task: "Document Upload API (Base64 & URL)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ TESTED: Document upload API working perfectly for both methods
+          - POST /api/documents with Base64 file data successful
+          - POST /api/documents with URL successful
+          - Document model flexibility verified:
+            * Base64 documents: file_base64, file_name, file_type fields
+            * URL documents: url field (no file fields)
+            * Both types: id, title, description, type, created_at
+          - GET /api/documents returns both uploaded documents correctly
+          - Test documents created:
+            * "Test Katalog" (katalog type) with PDF base64 data
+            * "Test URL Doküman" (brosur type) with external URL
+          - Document retrieval working: 2 documents in system
+          - Admin-only access control working (403 for non-admin users)
+
 frontend:
   - task: "Product Addition (Ürün Ekle)"
     implemented: true
