@@ -64,11 +64,13 @@ const DocumentsPage = ({ user, setUser }) => {
     e.preventDefault();
     try {
       const data = {
-        customer_id: formData.customer_id,
         title: formData.title,
-        file_name: formData.file_name,
-        file_base64: formData.file_base64,
-        file_type: formData.file_type
+        description: formData.description || '',
+        type: formData.type,
+        url: uploadMode === 'url' ? formData.url : '',
+        file_name: uploadMode === 'upload' ? formData.file_name : '',
+        file_base64: uploadMode === 'upload' ? formData.file_base64 : '',
+        file_type: uploadMode === 'upload' ? formData.file_type : ''
       };
       await axiosInstance.post('/documents', data);
       toast.success('Doküman eklendi');
