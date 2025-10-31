@@ -48,6 +48,44 @@ axiosInstance.interceptors.response.use(
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Inactivity timer - 1 saat işlem yapılmazsa otomatik logout
+  useEffect(() => {
+    if (!user) return;
+    
+    const INACTIVITY_TIMEOUT = 60 * 60 * 1000; // 1 saat (milliseconds)
+    let inactivityTimer;
+    
+    const resetTimer = () => {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      
+      inactivityTimer = setTimeout(() => {
+        // 1 saat işlem yapılmadı, logout yap
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        toast.info('Güvenlik nedeniyle oturumunuz sonlandırıldı. Lütfen tekrar giriş yapın.');
+        window.location.href = '/login';
+      }, INACTIVITY_TIMEOUT);
+    };
+    
+    // Kullanıcı aktivitesi olduğunda timer'ı sıfırla
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+    events.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+    
+    // İlk timer'ı başlat
+    resetTimer();
+    
+    // Cleanup
+    return () => {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      events.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, [user]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
