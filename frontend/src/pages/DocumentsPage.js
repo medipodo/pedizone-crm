@@ -85,12 +85,15 @@ const DocumentsPage = ({ user, setUser }) => {
 
   const resetForm = () => {
     setFormData({
-      customer_id: '',
       title: '',
-      file_name: '',
+      description: '',
+      url: '',
+      type: 'katalog',
       file_base64: '',
+      file_name: '',
       file_type: ''
     });
+    setUploadMode('url');
   };
 
   const getTypeLabel = (type) => {
