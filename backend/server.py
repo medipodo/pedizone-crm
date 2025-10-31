@@ -202,15 +202,21 @@ class Document(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     description: Optional[str] = None
-    url: str
+    url: Optional[str] = None
     type: str  # katalog, brosur, fiyat_listesi
+    file_name: Optional[str] = None
+    file_base64: Optional[str] = None
+    file_type: Optional[str] = None
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class DocumentCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    url: str
+    url: Optional[str] = None
     type: str
+    file_name: Optional[str] = None
+    file_base64: Optional[str] = None
+    file_type: Optional[str] = None
 
 # ============ AUTH HELPERS ============
 
