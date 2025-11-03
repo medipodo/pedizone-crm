@@ -535,9 +535,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Document Upload API (Base64 & URL)"
-    - "Visit Map Display"
-    - "Calendar Visit Display"
+    - "Collection Deletion API"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
