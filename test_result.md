@@ -314,6 +314,27 @@ backend:
           - Document retrieval working: 2 documents in system
           - Admin-only access control working (403 for non-admin users)
 
+  - task: "Collection Deletion API"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ TESTED: Collection deletion API working perfectly
+          - DELETE /api/collections/{collection_id} returns 200 OK
+          - Success message "Tahsilat silindi" returned correctly
+          - Collection properly removed from database (verified via GET /api/collections)
+          - Collection count decreases correctly after deletion
+          - Error handling working: 404 for non-existent collections with message "Tahsilat bulunamadı"
+          - Test collection (1500.0 TL) created and successfully deleted
+          - Database consistency verified - no orphaned data
+          - All authentication and authorization working correctly
+
 frontend:
   - task: "Product Addition (Ürün Ekle)"
     implemented: true
