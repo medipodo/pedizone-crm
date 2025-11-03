@@ -237,7 +237,11 @@ class ComprehensiveCollectionDeletionTester:
         fake_id = "non-existent-collection-id-12345"
         response = self.make_request("DELETE", f"/collections/{fake_id}")
         
-        if response and response.status_code == 404:
+        if response is None:
+            self.log("❌ Delete non-existent collection request failed - no response", "ERROR")
+            return False
+            
+        if response.status_code == 404:
             data = response.json()
             expected_message = "Tahsilat bulunamadı"
             actual_message = data.get("detail", "")
@@ -249,11 +253,8 @@ class ComprehensiveCollectionDeletionTester:
             else:
                 self.log(f"❌ Unexpected 404 error message: '{actual_message}'", "ERROR")
                 return False
-        elif response:
-            self.log(f"❌ Expected 404 for non-existent collection, got {response.status_code}", "ERROR")
-            return False
         else:
-            self.log("❌ Delete non-existent collection request failed - no response", "ERROR")
+            self.log(f"❌ Expected 404 for non-existent collection, got {response.status_code}", "ERROR")
             return False
     
     def run_all_tests(self):
