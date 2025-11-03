@@ -609,6 +609,14 @@ async def create_collection(collection: CollectionCreate, current_user: dict = D
     await db.collections.insert_one(collection_obj.model_dump())
     return collection_obj
 
+@api_router.delete("/collections/{collection_id}")
+async def delete_collection(collection_id: str, current_user: dict = Depends(get_current_user)):
+    result = await db.collections.delete_one({"id": collection_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Tahsilat bulunamadı")
+    return {"message": "Tahsilat silindi"}
+
+
 # ============ DOCUMENTS ============
 
 @api_router.get("/documents", response_model=List[Document])
