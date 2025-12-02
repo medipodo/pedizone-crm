@@ -99,7 +99,6 @@ const DocumentsPage = ({ user, setUser }) => {
       toast.error(error.response?.data?.detail || 'Silme işlemi başarısız');
     }
   };
-  };
 
   const resetForm = () => {
     setFormData({
