@@ -18,7 +18,8 @@ import ReportsPage from '@/pages/ReportsPage';
 import DocumentsPage from '@/pages/DocumentsPage';
 import CalendarPage from '@/pages/CalendarPage';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+// Use relative path for API calls (Netlify will proxy to backend)
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 export const API = `${BACKEND_URL}/api`;
 
 export const axiosInstance = axios.create({
