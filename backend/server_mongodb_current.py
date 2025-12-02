@@ -202,15 +202,21 @@ class Document(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     description: Optional[str] = None
-    url: str
+    url: Optional[str] = None
     type: str  # katalog, brosur, fiyat_listesi
+    file_name: Optional[str] = None
+    file_base64: Optional[str] = None
+    file_type: Optional[str] = None
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class DocumentCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    url: str
+    url: Optional[str] = None
     type: str
+    file_name: Optional[str] = None
+    file_base64: Optional[str] = None
+    file_type: Optional[str] = None
 
 # ============ AUTH HELPERS ============
 
@@ -609,8 +615,24 @@ async def create_document(document: DocumentCreate, current_user: dict = Depends
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Sadece admin doküman ekleyebilir")
     document_obj = Document(**document.model_dump())
+    
+    # Dosya yükleme varsa, base64'ü kaldırıp sadece dosya adını ve tipini tut
+    if document_obj.file_base64:
+        # Burada normalde dosya S3'e yüklenir ve URL'i document_obj.url'e atanır.
+        # Şimdilik sadece base64'ü kaldırıp kaydetme işlemini yapıyoruz.
+        document_obj.file_base64 = None
+
     await db.documents.insert_one(document_obj.model_dump())
     return document_obj
+
+@api_router.delete("/documents/{document_id}")
+async def delete_document(document_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Sadece admin doküman silebilir")
+    result = await db.documents.delete_one({"id": document_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Doküman bulunamadı")
+    return {"message": "Doküman silindi"}
 
 # ============ REPORTS ============
 

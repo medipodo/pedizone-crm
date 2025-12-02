@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, FileText, ExternalLink } from 'lucide-react';
+import { Plus, FileText, ExternalLink, Trash2 } from 'lucide-react';
 
 const DocumentsPage = ({ user, setUser }) => {
   const [documents, setDocuments] = useState([]);
@@ -72,7 +72,10 @@ const DocumentsPage = ({ user, setUser }) => {
         file_base64: uploadMode === 'upload' ? formData.file_base64 : '',
         file_type: uploadMode === 'upload' ? formData.file_type : ''
       };
-      await axiosInstance.post('/documents', data);
+      const response = await axiosInstance.post('/documents', data);
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
       toast.success('Doküman eklendi');
       setDialogOpen(false);
       resetForm();
@@ -81,6 +84,21 @@ const DocumentsPage = ({ user, setUser }) => {
       console.error('Doküman yükleme hatası:', error);
       toast.error(error.response?.data?.detail || 'İşlem başarısız');
     }
+  };
+
+  const handleDelete = async (docId, docTitle) => {
+    if (!window.confirm(`'${docTitle}' dokümanını silmek istediğinizden emin misiniz?`)) {
+      return;
+    }
+    try {
+      await axiosInstance.delete(`/documents/${docId}`);
+      toast.success(`'${docTitle}' dokümanı silindi`);
+      fetchDocuments();
+    } catch (error) {
+      console.error('Doküman silme hatası:', error);
+      toast.error(error.response?.data?.detail || 'Silme işlemi başarısız');
+    }
+  };
   };
 
   const resetForm = () => {
@@ -268,15 +286,28 @@ const DocumentsPage = ({ user, setUser }) => {
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">{doc.title}</h3>
               <p className="text-sm text-gray-600 mb-4">{doc.description || 'Açıklama yok'}</p>
-              <a
-                href={doc.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-[#E50019] hover:underline"
-                data-testid={`view-document-${doc.title}`}
-              >
-                Görüntüle <ExternalLink size={14} />
-              </a>
+              <div className="flex justify-between items-center">
+                <a
+                  href={doc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-[#E50019] hover:underline"
+                  data-testid={`view-document-${doc.title}`}
+                >
+                  Görüntüle <ExternalLink size={14} />
+                </a>
+                {user.role === 'admin' && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={(e) => { e.stopPropagation(); handleDelete(doc.id, doc.title); }}
+                    className="text-gray-400 hover:text-red-500"
+                    data-testid={`delete-document-${doc.title}`}
+                  >
+                    <Trash2 size={18} />
+                  </Button>
+                )}
+              </div>
             </div>
           ))}
         </div>
