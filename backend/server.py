@@ -629,8 +629,19 @@ async def create_document(document: DocumentCreate, current_user: dict = Depends
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Sadece admin doküman ekleyebilir")
     document_obj = Document(**document.model_dump())
+    
+    # Dosya yükleme varsa, base64'ü kaldırıp sadece dosya adını ve tipini tut
+    if document_obj.file_base64:
+        # Burada normalde dosya S3'e yüklenir ve URL'i document_obj.url'e atanır.
+        # Şimdilik sadece base64'ü kaldırıp kaydetme işlemini yapıyoruz.
+        document_obj.file_base64 = None
+
     await db.documents.insert_one(document_obj.model_dump())
     return document_obj
+
+
+
+
 
 # ============ REPORTS ============
 
