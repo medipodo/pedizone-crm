@@ -270,7 +270,7 @@ class CustomerCreate(BaseModel):
     name: str
     address: str
     phone: str
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     region_id: str
     tax_number: Optional[str] = None
     notes: Optional[str] = None
@@ -287,6 +287,13 @@ class CustomerCreate(BaseModel):
     def validate_phone(cls, v):
         if not v or len(v.strip()) < 5:
             raise ValueError("Geçerli bir telefon numarası girin")
+        return v.strip()
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v):
+        if v is None or v == '' or v.strip() == '':
+            return None
         return v.strip()
 
 class Product(BaseModel):
