@@ -1,13 +1,20 @@
 [build]
   base = "frontend"
-  command = "npx expo export --platform web"
-  publish = "dist"
+  command = "yarn install && yarn build"
+  publish = "build"
 
 [build.environment]
-  NODE_VERSION = "22"
-  EXPO_PUBLIC_BACKEND_URL = "https://pedizone-api.fly.dev"
+  REACT_APP_BACKEND_URL = ""
+  NODE_VERSION = "20"
 
-# SPA routing için - tüm route'ları index.html'e yönlendir
+# API requests should be proxied to backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://pedizone-api.fly.dev/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback - must be last
 [[redirects]]
   from = "/*"
   to = "/index.html"
