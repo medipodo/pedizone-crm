@@ -4,7 +4,7 @@
   publish = "build"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "22"
   REACT_APP_BACKEND_URL = "https://pedizone-api.fly.dev"
 
 # SPA routing için - tüm route'ları index.html'e yönlendir
