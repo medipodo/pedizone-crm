@@ -1,0 +1,14 @@
+[build]
+  base = "frontend"
+  command = "yarn build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "18"
+  REACT_APP_BACKEND_URL = "https://pedizone-api.fly.dev"
+
+# SPA routing için - tüm route'ları index.html'e yönlendir
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
